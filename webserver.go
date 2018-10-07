@@ -56,7 +56,7 @@ func OpenWebServer(config *Config, db *MySql) error {
 	})
 
 	router.HandleFunc("/createShortUrl", func(w http.ResponseWriter, r *http.Request) {
-		LinkHandlerCreateRequest(w, r, mysql, config.CreationToken)
+		LinkHandlerCreateRequest(w, r, mysql, config.CreationToken, config.RandShortLen)
 	})
 
 	router.HandleFunc("/{shortlink}", func(w http.ResponseWriter, r *http.Request) {

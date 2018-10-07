@@ -21,6 +21,7 @@ type Cert struct {
 type Config struct {
 	Port          string      `yaml:"port"`
 	CreationToken string      `yaml:"creationtoken"`
+	RandShortLen  int         `yaml:"randshortlen"`
 	Cert          *Cert       `yaml:"cert"`
 	MySql         *MySqlCreds `yaml:"mysql"`
 }
@@ -33,9 +34,10 @@ func ConfigOpen(path string) (*Config, error) {
 			return nil, err
 		}
 		config := &Config{
-			Port:  "8080",
-			Cert:  new(Cert),
-			MySql: new(MySqlCreds),
+			Port:         "8080",
+			RandShortLen: 8,
+			Cert:         new(Cert),
+			MySql:        new(MySqlCreds),
 		}
 		encoder := yaml.NewEncoder(fhandler)
 		defer encoder.Close()
@@ -47,5 +49,8 @@ func ConfigOpen(path string) (*Config, error) {
 	config := new(Config)
 	decoder := yaml.NewDecoder(fhandler)
 	err = decoder.Decode(config)
+	if config.RandShortLen == 0 {
+		config.RandShortLen = 8
+	}
 	return config, err
 }

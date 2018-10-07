@@ -41,7 +41,7 @@ func LinkHandlerCreate(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "./assets/createlink.html")
 }
 
-func LinkHandlerCreateRequest(w http.ResponseWriter, r *http.Request, mysql *MySql, creationtoken string) {
+func LinkHandlerCreateRequest(w http.ResponseWriter, r *http.Request, mysql *MySql, creationtoken string, randshortlen int) {
 	rooturl := r.FormValue("rooturl")
 	shortlink := r.FormValue("shortlink")
 	enteredtoken := r.FormValue("creationtoken")
@@ -49,6 +49,10 @@ func LinkHandlerCreateRequest(w http.ResponseWriter, r *http.Request, mysql *MyS
 	if enteredtoken != creationtoken {
 		WriteError(w, 401, "unauthorized")
 		return
+	}
+
+	if shortlink == "" {
+		shortlink = RandomString(randshortlen)
 	}
 
 	rows, err := mysql.Query("SELECT * FROM shortlinks WHERE shortlink = ?", shortlink)
