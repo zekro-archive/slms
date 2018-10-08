@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Shortlink Management</title>
+    <style>
+table {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+table {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+th {
+    border: 1px solid black;
+    padding: 5px;
+}
+
+td {
+    border: 1px solid black;
+    padding: 5px;
+}
+    </style>
+</head>
+
+<body>
+
+    <table style="width:100%" border="1" id="linktable">
+        <tr>
+            <th>RootLink</th>
+            <th>ShortLink</th>
+            <th>CreatedAt</th>
+            <th>Accesses</th>
+            <th>LastAccess</th>
+            <th>Action</th>
+        </tr>
+    </table>
+
+    <script>
+        var $ = (query) => document.querySelector(query);
+
+        var linktable = $('#linktable');
+
+        var a = {{.ShortLinks}};
+
+        a.forEach(l => {
+            var row = document.createElement('tr');
+
+            var frootlink = document.createElement('td');
+            frootlink.innerHTML = l.RootLink;
+            row.appendChild(frootlink);
+
+            var fshortlink = document.createElement('td');
+            fshortlink.innerHTML = l.ShortLink;
+            row.appendChild(fshortlink);
+
+            var fcreated = document.createElement('td');
+            fcreated.innerHTML = l.Created;
+            row.appendChild(fcreated);
+
+            var faccesses = document.createElement('td');
+            faccesses.innerHTML = l.Accesses;
+            row.appendChild(faccesses);
+
+            var flastaccess = document.createElement('td');
+            flastaccess.innerHTML = l.LastAccess;
+            row.appendChild(flastaccess);
+
+            var fremove = document.createElement('td');
+            var formremove = document.createElement('form');
+            formremove.action = '/deleteShortUrl';
+            formremove.method = 'POST';
+            formremove.innerHTML = `
+                <input type="submit" value="REMOVE">
+                <input type="hidden" name="shortlink" value="${l.ShortLink}">
+            `;
+            fremove.appendChild(formremove);
+            row.appendChild(fremove);
+
+            linktable.appendChild(row);
+        });
+        
+    </script>
+
+</body>
+
+</html>

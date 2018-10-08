@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"html/template"
 
 	"github.com/gorilla/mux"
 )
@@ -40,7 +41,7 @@ func WriteResponse(w http.ResponseWriter, code int, message string, data interfa
 	w.Write(bdata)
 }
 
-func OpenWebServer(config *Config, db *MySql) error {
+func OpenWebServer(config *Config, mysql *MySql) error {
 	certEnabled := config.Cert.KeyFile != "" && config.Cert.CertFile != ""
 
 	router := mux.NewRouter()
@@ -55,6 +56,28 @@ func OpenWebServer(config *Config, db *MySql) error {
 		LinkHandlerCreate(w, r)
 	})
 
+	router.HandleFunc("/_manage", func(w http.ResponseWriter, r *http.Request) {
+		shortLinks := make([]*ShortLink, 0)
+
+		rows, err := mysql.Query("SELECT * FROM shortlinks")
+		if err != nil {
+			WriteError(w, 500, err.Error())
+		}
+		for rows.Next() {
+			sl := new(ShortLink)
+			rows.Scan(&sl.RootLink, &sl.ShortLink, &sl.Created, &sl.Accesses, &sl.LastAccess)
+			shortLinks = append(shortLinks, sl)
+		}
+
+		t := template.New("manage.html")
+		t, _ = t.ParseFiles("./assets/manage.html")
+		t.Execute(w, struct{
+			ShortLinks []*ShortLink
+		}{
+			ShortLinks: shortLinks,
+		})
+	})
+
 	router.HandleFunc("/createShortUrl", func(w http.ResponseWriter, r *http.Request) {
 		LinkHandlerCreateRequest(w, r, mysql, config.CreationToken, config.RandShortLen)
 	})
@@ -64,8 +87,6 @@ func OpenWebServer(config *Config, db *MySql) error {
 	})
 
 	http.Handle("/", router)
-
-	mysql = db
 
 	if certEnabled {
 		log.Printf("Running Webserver in TLS mode on port %s", config.Port)
