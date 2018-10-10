@@ -6,6 +6,8 @@ import (
 
 func main() {
 
+	log.Println("STARTING UP SLMS...")
+
 	config, err := ConfigOpen("config.yaml")
 	if err != nil {
 		log.Fatal("ERROR ON CREATING CONFIG: ", err)

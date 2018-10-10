@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"html/template"
 	"log"
 	"net/http"
-	"html/template"
 
 	"github.com/gorilla/mux"
 )
@@ -52,11 +52,21 @@ func OpenWebServer(config *Config, mysql *MySql) error {
 
 	// router.Methods("GET").HandlerFunc(fileServerHandler)
 
+	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "./assets/login.html")
+	})
+
 	router.HandleFunc("/_create", func(w http.ResponseWriter, r *http.Request) {
 		LinkHandlerCreate(w, r)
 	})
 
 	router.HandleFunc("/_manage", func(w http.ResponseWriter, r *http.Request) {
+		token := r.FormValue("token")
+		if token != config.CreationToken {
+			WriteError(w, 403, "unauthorized")
+			return
+		}
+
 		shortLinks := make([]*ShortLink, 0)
 
 		rows, err := mysql.Query("SELECT * FROM shortlinks")
@@ -69,12 +79,15 @@ func OpenWebServer(config *Config, mysql *MySql) error {
 			shortLinks = append(shortLinks, sl)
 		}
 
+		tokenHash := GetSHA256Hash(token)
 		t := template.New("manage.html")
 		t, _ = t.ParseFiles("./assets/manage.html")
-		t.Execute(w, struct{
+		t.Execute(w, struct {
 			ShortLinks []*ShortLink
+			TokenHash  string
 		}{
 			ShortLinks: shortLinks,
+			TokenHash:  tokenHash,
 		})
 	})
 

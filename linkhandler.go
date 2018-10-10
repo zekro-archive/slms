@@ -46,7 +46,7 @@ func LinkHandlerCreateRequest(w http.ResponseWriter, r *http.Request, mysql *MyS
 	shortlink := r.FormValue("shortlink")
 	enteredtoken := r.FormValue("creationtoken")
 
-	if enteredtoken != creationtoken {
+	if enteredtoken != GetSHA256Hash(creationtoken) {
 		WriteError(w, 401, "unauthorized")
 		return
 	}

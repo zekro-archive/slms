@@ -28,6 +28,7 @@ td {
 
 <body>
 
+    <h2>CREATED LINKS</h2>
     <table style="width:100%" border="1" id="linktable">
         <tr>
             <th>RootLink</th>
@@ -38,6 +39,17 @@ td {
             <th>Action</th>
         </tr>
     </table>
+
+    <h2>CREATE SHORT LINK</h2>
+    <form action="/createShortUrl" method="POST">
+        <p>LONG URL:</p>
+        <input type="text" name="rooturl"/>
+        <p>SHORT (leave empty for random one):</p>
+        <input type="text" name="shortlink"/>
+        <input type="hidden" name="creationtoken" value="{{.TokenHash}}"/>
+        <br>
+        <input type="submit" value="CREATE">
+    </form>
 
     <script>
         var $ = (query) => document.querySelector(query);
