@@ -1,0 +1,16 @@
+language: go
+
+go:
+  - tip
+
+script:
+  - bash build.sh
+
+deploy:
+  provider: releases
+  skip_cleanup: true
+  api_key:
+    secure: uf8zesl3IG1aE/zMxMn7SJTwcnyQEzGAX+j+DOSIKqEZc0Bi7Jh3oqcpXRqY6M2xk/vFYt8cJ/IQOY2lX+050VPyJbLxkijZY7s1mBzGjcR3o10JZM024acGehjIXROtylN2n2jR17uN6Njog1dNPeWRA2ZdE3+W40uR+qLVbWild9GyAeir7qgXfHnc12J98PVwl68U03328jC0YtDdJOxnNDv/kSG74hRf7E+E48avOWZhKK4izTnhZ68vEsexnU/H2mAAbZP6x08MK2zLAE2COqwG83yZLcYiLmu3eVxTPAPH1JviSxFh1JQemYSmTzVrkMtMObhp0hgH5G1QgtzXibJ6jLE+Vqc8JAL4zfX8SA4iY0Axh9mU54yE7owJVnPvuecMBTbgsX9Y0k/VoFNUqzPiWLNlIWhVzkAIstJ9ckBguIRAmHzHRtfYui4JTg0CWPouXzl4akS/2HudWB1+ap8rfGWkDOrjzGuB/XzNEhk+hUNVnNDLaTmt+GtYFf2tIjXtO8LkuBtxMVPrUlj8hguIzWIpddXmSFaVZna7B2oegd823gKYuTa4S5yJp48E+wCQB9cHAZb0iMfmMrJLetpi5yq3XX31ggJ6i7RaLsUrNqWBp/GqWlyKjn9W7FOasbfRViJ9bV5kqxJNJnppFL+XbNJ5NTbK5K3G64E=
+  file: builds_and_assets.tar.gz
+  on:
+    tags: true
