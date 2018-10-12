@@ -8,7 +8,9 @@
 
 <body>
 
-    <h2 style="text-align: center;">CREATED LINKS</h2>
+    <p class="version-header">version {{.AppVersion}} [{{.AppCommit}} ({{.AppDate}})]</p>
+
+    <h2 style="text-align: center; margin-top: 40px;">CREATED LINKS</h2>
     <table style="width:100%" border="1" id="linktable">
         <tr>
             <th>RootLink</th>
@@ -20,13 +22,14 @@
         </tr>
     </table>
 
+    <hr style="margin-top: 50px;"/>
     <center style="margin-top: 50px;">
         <h2>CREATE SHORT LINK</h2>
         <form action="/createShortUrl" method="POST">
             <p>LONG URL:</p>
-            <input class="textbox" type="text" name="rooturl"/>
+            <input class="textbox" type="text" name="rooturl" autocomplete="off"/>
             <p>SHORT (leave empty for random one):</p>
-            <input class="textbox" type="text" name="shortlink"/>
+            <input class="textbox" type="text" name="shortlink" autocomplete="off"/>
             <input type="hidden" name="creationtoken" value="{{.TokenHash}}"/>
             <input type="hidden" name="frommanagepage" value="1">
             <br>
@@ -42,15 +45,55 @@
 
         var a = {{.ShortLinks}};
 
-        a.forEach(l => {
+        function setClipboardText(text){
+            var id = 'mycustom-clipboard-textarea-hidden-id';
+            var existsTextarea = document.getElementById(id);
+
+            if (!existsTextarea){
+                var textarea = document.createElement('textarea');
+                textarea.id = id;
+                textarea.style.position = 'fixed';
+                textarea.style.top = 0;
+                textarea.style.left = 0;
+                textarea.style.width = '1px';
+                textarea.style.height = '1px';
+                textarea.style.padding = 0;
+                textarea.style.border = 'none';
+                textarea.style.outline = 'none';
+                textarea.style.boxShadow = 'none';
+            
+                textarea.style.background = 'transparent';
+                document.querySelector('body').appendChild(textarea);
+                existsTextarea = document.getElementById(id);
+            }
+        
+            existsTextarea.value = text;
+            existsTextarea.select();
+        
+            try {
+                var status = document.execCommand('copy');
+                if (!status){
+                    window.alert('Could not copy shortlink to clipboard.');
+                } else {
+                    window.alert('Shortlink copied to clipboard.');
+                }
+            } catch (err) {
+                window.alert('Could not copy shortlink to clipboard.');
+            }
+        }
+
+        a.reverse().forEach(l => {
             var row = document.createElement('tr');
 
             var frootlink = document.createElement('td');
-            frootlink.innerHTML = l.RootLink;
+            frootlink.innerHTML = `<a href="${l.RootLink}" target="_blank">${l.RootLink}</a>`;
             row.appendChild(frootlink);
 
             var fshortlink = document.createElement('td');
-            fshortlink.innerHTML = l.ShortLink;
+            fshortlink.innerHTML = `<a href="javascript:{}">${l.ShortLink}</a>`;
+            fshortlink.onclick = () => {
+                setClipboardText(window.location.origin + '/' + l.ShortLink);
+            };
             row.appendChild(fshortlink);
 
             var fcreated = document.createElement('td');

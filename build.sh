@@ -28,7 +28,7 @@ for BUILD in ${BUILDS[*]}; do
     echo "Building ${OS}_$ARCH..."
     (env GOOS=$OS GOARCH=$ARCH \
         go build -o builds/${BUILDNAME}_${OS}_${ARCH} \
-        -ldflags "-X main.appVersion=$TAG -X main.appDaten=$DATE -X main.appCommit=$COMMIT")
+        -ldflags "-X main.AppVersion=$TAG -X main.AppDaten=$DATE -X main.AppCommit=$COMMIT")
 
     if [ "$OS" = "windows" ]; then
         mv builds/${BUILDNAME}_windows_${ARCH} builds/${BUILDNAME}_windows_${ARCH}.exe

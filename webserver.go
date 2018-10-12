@@ -55,10 +55,6 @@ func OpenWebServer(config *Config, mysql *MySql) error {
 		http.ServeFile(w, r, "./assets/login.html")
 	})
 
-	router.HandleFunc("/_create", func(w http.ResponseWriter, r *http.Request) {
-		LinkHandlerCreate(w, r)
-	})
-
 	router.HandleFunc("/_manage", func(w http.ResponseWriter, r *http.Request) {
 		LinkHandleManagePage(w, r, config)
 	})

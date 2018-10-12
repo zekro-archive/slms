@@ -67,9 +67,15 @@ func LinkHandleManagePage(w http.ResponseWriter, r *http.Request, config *Config
 	t.Execute(w, struct {
 		ShortLinks []*ShortLink
 		TokenHash  string
+		AppVersion string
+		AppCommit  string
+		AppDate    string
 	}{
 		ShortLinks: shortLinks,
 		TokenHash:  tokenHash,
+		AppVersion: AppVersion,
+		AppCommit:  AppCommit,
+		AppDate:    AppDate,
 	})
 }
 
@@ -82,6 +88,13 @@ func LinkHandlerCreateRequest(w http.ResponseWriter, r *http.Request, mysql *MyS
 	if enteredtoken != GetSHA256Hash(config.CreationToken) {
 		WriteError(w, 401, "unauthorized")
 		return
+	}
+
+	for _, bl := range BLOCKED_SHORTLINKS {
+		if shortlink == bl {
+			WriteError(w, 400, "blacklisted shortlink")
+			return
+		}
 	}
 
 	if shortlink == "" {

@@ -6,7 +6,7 @@ body {
     background-color: #263238;
 }
 
-p, h1, h2, h3, h4, h5, h6, table, tr, td, th, li {
+a, p, h1, h2, h3, h4, h5, h6, table, tr, td, th, li {
     font-family: 'Roboto', sans-serif;
     color: white;
 }
@@ -55,4 +55,9 @@ td {
     font-family: 'Raleway', sans-serif;
     transition: .25s ease;
     cursor: pointer;
+}
+
+.version-header {
+    font-size: 12px;
+    text-align: center;
 }
