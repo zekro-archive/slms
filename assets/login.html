@@ -5,16 +5,17 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <title>SLMS Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- <link rel="stylesheet" type="text/css" media="screen" href="main.css" /> -->
+    <link rel="stylesheet" type="text/css" media="screen" href="/static/style.css" />
     <!-- <script src="main.js"></script> -->
 </head>
 <body>
-    
-    <form action="/_manage" method="POST">
-        <p>Login Token:</p>
-        <input type="password" name="token">
-        <input type="submit" value="LOGIN">
-    </form>
-
+    <center style="margin-top: 150px;">
+        <form action="/_manage" method="POST">
+            <p>Login Token:</p>
+            <input class="textbox" type="password" name="token">
+            <br><br><br>
+            <input class="button" type="submit" value="LOGIN">
+        </form>
+    </center>
 </body>
 </html>

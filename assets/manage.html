@@ -3,32 +3,12 @@
 
 <head>
     <title>Shortlink Management</title>
-    <style>
-table {
-    border: 1px solid black;
-    border-collapse: collapse;
-}
-
-table {
-    border: 1px solid black;
-    border-collapse: collapse;
-}
-
-th {
-    border: 1px solid black;
-    padding: 5px;
-}
-
-td {
-    border: 1px solid black;
-    padding: 5px;
-}
-    </style>
+    <link rel="stylesheet" type="text/css" media="screen" href="/static/style.css" />
 </head>
 
 <body>
 
-    <h2>CREATED LINKS</h2>
+    <h2 style="text-align: center;">CREATED LINKS</h2>
     <table style="width:100%" border="1" id="linktable">
         <tr>
             <th>RootLink</th>
@@ -40,16 +20,20 @@ td {
         </tr>
     </table>
 
-    <h2>CREATE SHORT LINK</h2>
-    <form action="/createShortUrl" method="POST">
-        <p>LONG URL:</p>
-        <input type="text" name="rooturl"/>
-        <p>SHORT (leave empty for random one):</p>
-        <input type="text" name="shortlink"/>
-        <input type="hidden" name="creationtoken" value="{{.TokenHash}}"/>
-        <br>
-        <input type="submit" value="CREATE">
-    </form>
+    <center style="margin-top: 50px;">
+        <h2>CREATE SHORT LINK</h2>
+        <form action="/createShortUrl" method="POST">
+            <p>LONG URL:</p>
+            <input class="textbox" type="text" name="rooturl"/>
+            <p>SHORT (leave empty for random one):</p>
+            <input class="textbox" type="text" name="shortlink"/>
+            <input type="hidden" name="creationtoken" value="{{.TokenHash}}"/>
+            <input type="hidden" name="frommanagepage" value="1">
+            <br>
+            <br>
+            <input class="button" type="submit" value="CREATE">
+        </form>
+    </center>
 
     <script>
         var $ = (query) => document.querySelector(query);
@@ -86,8 +70,10 @@ td {
             formremove.action = '/deleteShortUrl';
             formremove.method = 'POST';
             formremove.innerHTML = `
-                <input type="submit" value="REMOVE">
+                <input class="button" type="submit" value="REMOVE">
                 <input type="hidden" name="shortlink" value="${l.ShortLink}">
+                <input type="hidden" name="tokenhash" value="{{.TokenHash}}">
+                <input type="hidden" name="frommanagepage" value="1">
             `;
             fremove.appendChild(formremove);
             row.appendChild(fremove);

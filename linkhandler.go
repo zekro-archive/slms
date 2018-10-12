@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"html/template"
 	"fmt"
 	"log"
 	"net/http"
@@ -41,18 +42,50 @@ func LinkHandlerCreate(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "./assets/createlink.html")
 }
 
-func LinkHandlerCreateRequest(w http.ResponseWriter, r *http.Request, mysql *MySql, creationtoken string, randshortlen int) {
+func LinkHandleManagePage(w http.ResponseWriter, r *http.Request, config *Config) {
+	token := r.FormValue("token")
+	if token != config.CreationToken {
+		WriteError(w, 403, "unauthorized")
+		return
+	}
+
+	shortLinks := make([]*ShortLink, 0)
+
+	rows, err := mysql.Query("SELECT * FROM shortlinks")
+	if err != nil {
+		WriteError(w, 500, err.Error())
+	}
+	for rows.Next() {
+		sl := new(ShortLink)
+		rows.Scan(&sl.RootLink, &sl.ShortLink, &sl.Created, &sl.Accesses, &sl.LastAccess)
+		shortLinks = append(shortLinks, sl)
+	}
+
+	tokenHash := GetSHA256Hash(token)
+	t := template.New("manage.html")
+	t, _ = t.ParseFiles("./assets/manage.html")
+	t.Execute(w, struct {
+		ShortLinks []*ShortLink
+		TokenHash  string
+	}{
+		ShortLinks: shortLinks,
+		TokenHash:  tokenHash,
+	})
+}
+
+func LinkHandlerCreateRequest(w http.ResponseWriter, r *http.Request, mysql *MySql, config *Config) {
 	rooturl := r.FormValue("rooturl")
 	shortlink := r.FormValue("shortlink")
 	enteredtoken := r.FormValue("creationtoken")
+	frommanagepage := r.FormValue("frommanagepage")
 
-	if enteredtoken != GetSHA256Hash(creationtoken) {
+	if enteredtoken != GetSHA256Hash(config.CreationToken) {
 		WriteError(w, 401, "unauthorized")
 		return
 	}
 
 	if shortlink == "" {
-		shortlink = RandomString(randshortlen)
+		shortlink = RandomString(config.RandShortLen)
 	}
 
 	rows, err := mysql.Query("SELECT * FROM shortlinks WHERE shortlink = ?", shortlink)
@@ -69,6 +102,11 @@ func LinkHandlerCreateRequest(w http.ResponseWriter, r *http.Request, mysql *MyS
 			WriteError(w, 500, err.Error())
 			return
 		}
+		if frommanagepage == "1" {
+			r.Form.Set("token", config.CreationToken)
+			LinkHandleManagePage(w, r, config)
+			return
+		}
 		WriteResponse(w, 201, "updated shortlink", map[string]string{
 			"mode":     "UPDATED",
 			"rooturl":  rooturl,
@@ -80,6 +118,11 @@ func LinkHandlerCreateRequest(w http.ResponseWriter, r *http.Request, mysql *MyS
 		if err != nil {
 			log.Println("ERROR CREATING SHORTLINK DB ENTRY: ", err)
 			WriteError(w, 500, err.Error())
+			return
+		}
+		if frommanagepage == "1" {
+			r.Form.Set("token", config.CreationToken)
+			LinkHandleManagePage(w, r, config)
 			return
 		}
 		WriteResponse(w, 201, "created shortlink", map[string]string{

@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"html/template"
 	"log"
 	"net/http"
 
@@ -61,38 +60,32 @@ func OpenWebServer(config *Config, mysql *MySql) error {
 	})
 
 	router.HandleFunc("/_manage", func(w http.ResponseWriter, r *http.Request) {
-		token := r.FormValue("token")
-		if token != config.CreationToken {
+		LinkHandleManagePage(w, r, config)
+	})
+
+	router.HandleFunc("/deleteShortUrl", func(w http.ResponseWriter, r *http.Request) {
+		tokenhash := r.FormValue("tokenhash")
+		shortlink := r.FormValue("shortlink")
+		frommanagepage := r.FormValue("frommanagepage")
+		if tokenhash != GetSHA256Hash(config.CreationToken) {
 			WriteError(w, 403, "unauthorized")
 			return
 		}
-
-		shortLinks := make([]*ShortLink, 0)
-
-		rows, err := mysql.Query("SELECT * FROM shortlinks")
+		_, err := mysql.Query("DELETE FROM shortlinks WHERE shortlink = ?", shortlink)
 		if err != nil {
 			WriteError(w, 500, err.Error())
+			return
 		}
-		for rows.Next() {
-			sl := new(ShortLink)
-			rows.Scan(&sl.RootLink, &sl.ShortLink, &sl.Created, &sl.Accesses, &sl.LastAccess)
-			shortLinks = append(shortLinks, sl)
+		if frommanagepage == "1" {
+			r.Form.Set("token", config.CreationToken)
+			LinkHandleManagePage(w, r, config)
+			return
 		}
-
-		tokenHash := GetSHA256Hash(token)
-		t := template.New("manage.html")
-		t, _ = t.ParseFiles("./assets/manage.html")
-		t.Execute(w, struct {
-			ShortLinks []*ShortLink
-			TokenHash  string
-		}{
-			ShortLinks: shortLinks,
-			TokenHash:  tokenHash,
-		})
+		WriteResponse(w, 200, "removed", nil)
 	})
 
 	router.HandleFunc("/createShortUrl", func(w http.ResponseWriter, r *http.Request) {
-		LinkHandlerCreateRequest(w, r, mysql, config.CreationToken, config.RandShortLen)
+		LinkHandlerCreateRequest(w, r, mysql, config)
 	})
 
 	router.HandleFunc("/{shortlink}", func(w http.ResponseWriter, r *http.Request) {
@@ -100,6 +93,7 @@ func OpenWebServer(config *Config, mysql *MySql) error {
 	})
 
 	http.Handle("/", router)
+	http.Handle("/static/", http.StripPrefix("/static", http.FileServer(http.Dir("./assets/static"))))
 
 	if certEnabled {
 		log.Printf("Running Webserver in TLS mode on port %s", config.Port)
