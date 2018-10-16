@@ -2,8 +2,8 @@ package main
 
 import (
 	"database/sql"
-	"html/template"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"time"
@@ -28,6 +28,7 @@ func LinkHandler(w http.ResponseWriter, r *http.Request, mysql *MySql) {
 		WriteError(w, 500, err.Error())
 		return
 	}
+	defer rows.Close()
 	rootlink := ""
 	rows.Next()
 	rows.Scan(&rootlink)
@@ -55,6 +56,7 @@ func LinkHandleManagePage(w http.ResponseWriter, r *http.Request, config *Config
 	if err != nil {
 		WriteError(w, 500, err.Error())
 	}
+	defer rows.Close()
 	for rows.Next() {
 		sl := new(ShortLink)
 		rows.Scan(&sl.RootLink, &sl.ShortLink, &sl.Created, &sl.Accesses, &sl.LastAccess)
@@ -107,14 +109,16 @@ func LinkHandlerCreateRequest(w http.ResponseWriter, r *http.Request, mysql *MyS
 		WriteError(w, 500, err.Error())
 		return
 	}
+	defer rows.Close()
 	if !rowsEmpty(rows) {
 		fmt.Println("UPDATE")
-		_, err = mysql.Query("UPDATE shortlinks SET rootlink = ?, created = ? WHERE shortlink = ?", rooturl, time.Now(), shortlink)
+		rows, err = mysql.Query("UPDATE shortlinks SET rootlink = ?, created = ? WHERE shortlink = ?", rooturl, time.Now(), shortlink)
 		if err != nil {
 			log.Println("ERROR UPDATING SHORTLINK DB ENTRY: ", err)
 			WriteError(w, 500, err.Error())
 			return
 		}
+		defer rows.Close()
 		if frommanagepage == "1" {
 			r.Form.Set("token", config.CreationToken)
 			LinkHandleManagePage(w, r, config)
@@ -127,12 +131,13 @@ func LinkHandlerCreateRequest(w http.ResponseWriter, r *http.Request, mysql *MyS
 		})
 
 	} else {
-		_, err = mysql.Query("INSERT INTO shortlinks (rootlink, shortlink) VALUES (?, ?)", rooturl, shortlink)
+		rows, err = mysql.Query("INSERT INTO shortlinks (rootlink, shortlink) VALUES (?, ?)", rooturl, shortlink)
 		if err != nil {
 			log.Println("ERROR CREATING SHORTLINK DB ENTRY: ", err)
 			WriteError(w, 500, err.Error())
 			return
 		}
+		defer rows.Close()
 		if frommanagepage == "1" {
 			r.Form.Set("token", config.CreationToken)
 			LinkHandleManagePage(w, r, config)
