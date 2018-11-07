@@ -20,7 +20,7 @@ SLMS is a server component where you can create and manage shortlinks which redi
 
 ### Management Page
 
-![](https://cdn.zekro.de/ss/chrome_2018-10-12_11-16-59.png)
+![](https://i.zekro.de/chrome_2018-10-12_11-16-59.png)
 *State: Commit `d774cf3ed11e8d8c51c949e5f4b69bae2ad03f03`*
 
 ---
