@@ -1,0 +1,12 @@
+database:
+  database: slms
+  host: localhost
+  password: ""
+  username: slms
+web_server:
+  address: :443
+  api_token: ""
+  tls:
+    cert_file: /var/cert/example.com.cer
+    key_file: /var/cert/example.com.key
+    use: true

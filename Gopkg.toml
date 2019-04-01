@@ -1,0 +1,23 @@
+[prune]
+  go-tests = true
+  unused-packages = true
+
+[[constraint]]
+  name = "github.com/valyala/fasthttp"
+  version = "20180529.0.0"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/qiangxue/fasthttp-routing"
+
+[[constraint]]
+  name = "github.com/op/go-logging"
+  version = "1.0.0"
+
+[[constraint]]
+  name = "github.com/ghodss/yaml"
+  version = "1.0.0"
+
+[[constraint]]
+  name = "github.com/go-sql-driver/mysql"
+  version = "1.4.1"
