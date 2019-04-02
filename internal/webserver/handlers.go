@@ -175,13 +175,7 @@ func (ws *WebServer) handlerShort(ctx *routing.Context) error {
 
 	if sl == nil {
 		ctx.SetStatusCode(statusNotFound)
-		ctx.SetBodyString(
-			"<html>" +
-				"<body>" +
-				"<h1>404 - Not Found</h1><br/>" +
-				"<p>No redirection could be found for this short link.</p>" +
-				"</body>" +
-				"</html>")
+		ctx.SendFile("./web/pages/invalid.html")
 		ctx.Abort()
 		return nil
 	}
