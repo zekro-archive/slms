@@ -1,5 +1,8 @@
 # SLMS REST API
 
+## Authorization
+<!-- TODO: Write stuff. -->
+
 ## Parameters
 
 Parameters with `default` formated names are **required** and parameters with *`italic`* formated names are ***optional***.
@@ -39,6 +42,17 @@ An error response from the API contains the status code as header and an error d
 ---
 
 ## Endpoints
+
+### Session Login
+
+> POST /api/login
+
+```
+< HTTP/1.1 200 OK
+< Date: Tue, 02 Apr 2019 20:44:25 GMT
+< Content-Length: 0
+< Set-Cookie: session=MTU1NDIzNzg2NX...; expires=Tue, 02 Apr 2019 20:54:25 GMT; path=/
+```
 
 ### Get Short Link List
 
