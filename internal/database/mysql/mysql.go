@@ -96,7 +96,7 @@ func (m *MySQL) prepStatements() error {
 	mErr.Append(err)
 
 	m.stmts.updateSLByID, err = m.db.Prepare(
-		"UPDATE `shortlinks` SET `shortlink` = ?, `rootlink` = ? " +
+		"UPDATE `shortlinks` SET `shortlink` = ?, `rootlink` = ?, `accesses` = ? " +
 			"WHERE `id` = ?;")
 	mErr.Append(err)
 
@@ -200,7 +200,7 @@ func (m *MySQL) GetShortLinks(from, limit int) ([]*shortlink.ShortLink, error) {
 }
 
 func (m *MySQL) UpdateShortLink(id int, updated *shortlink.ShortLink) error {
-	_, err := m.stmts.updateSLByID.Exec(updated.ShortLink, updated.RootLink, id)
+	_, err := m.stmts.updateSLByID.Exec(updated.ShortLink, updated.RootLink, updated.Accesses, id)
 	return err
 }
 

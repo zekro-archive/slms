@@ -5,13 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-
-	"github.com/zekroTJA/slms/internal/static"
-	"github.com/zekroTJA/slms/internal/util"
-
-	"github.com/zekroTJA/slms/internal/shortlink"
+	"strings"
 
 	"github.com/qiangxue/fasthttp-routing"
+	"github.com/valyala/fasthttp"
+	"github.com/zekroTJA/slms/internal/auth"
+	"github.com/zekroTJA/slms/internal/logger"
+	"github.com/zekroTJA/slms/internal/shortlink"
+	"github.com/zekroTJA/slms/internal/static"
+	"github.com/zekroTJA/slms/internal/util"
 )
 
 var (
@@ -28,6 +30,11 @@ const (
 	statusUnauthorized        = 401
 	statusNotFound            = 404
 	statusInternalServerError = 500
+)
+
+var (
+	fileHandlerPages  = fasthttp.FSHandler("./web/pages", 1)
+	fileHandlerStatic = fasthttp.FSHandler("./web/static", 2)
 )
 
 // --- HELPER FUNCTIONS AND HANDLERS -------------------------------------
@@ -90,6 +97,23 @@ func (ws *WebServer) getShortLink(ctx *routing.Context, onlyByShort bool) (*shor
 	return sl, true
 }
 
+func (ws *WebServer) checkRequestAuth(ctx *routing.Context) bool {
+	_, err := ws.auth.Authenticate(ctx)
+	if err != nil {
+		s, err := ws.sessions.Get(ctx.RequestCtx, "session")
+		if err != nil {
+			logger.Debug("WEBSERVER :: AUTH :: %s", err.Error())
+			return false
+		}
+		if s.IsNew {
+			logger.Debug("WEBSERVER :: AUTH :: is new")
+			return false
+		}
+		return true
+	}
+	return err == nil
+}
+
 // --- GENERAL HANDLERS --------------------------------------------------
 
 // Cahnges response "Server" header value
@@ -99,10 +123,34 @@ func (ws *WebServer) handlerHeaderServer(ctx *routing.Context) error {
 	return nil
 }
 
+func (ws *WebServer) handlerFileServer(ctx *routing.Context) error {
+	path := string(ctx.URI().Path())
+
+	if strings.HasPrefix(path, "/manage/static") {
+		ctx.Abort()
+		fileHandlerStatic(ctx.RequestCtx)
+		return nil
+	}
+
+	if strings.HasPrefix(path, "/manage") {
+		ctx.Abort()
+		if !ws.checkRequestAuth(ctx) {
+			ctx.SendFile("./web/pages/login.html")
+			return nil
+		}
+		fileHandlerPages(ctx.RequestCtx)
+		return nil
+	}
+
+	return nil
+}
+
 // General Authorization handler
 func (ws *WebServer) handlerAuth(ctx *routing.Context) error {
-	_, err := ws.auth.Authenticate(ctx)
-	return jsonError(ctx, err, statusUnauthorized)
+	if !ws.checkRequestAuth(ctx) {
+		return jsonError(ctx, auth.ErrUnauthorized, statusUnauthorized)
+	}
+	return nil
 }
 
 // Actual short link handler
@@ -149,10 +197,25 @@ func (ws *WebServer) handlerShort(ctx *routing.Context) error {
 			"</body>" +
 			"<a href=\"" + sl.RootLink + "\">moved here</a>" +
 			"</html>")
+
+	go func() {
+		sl.Accesses++
+		ws.db.UpdateShortLink(sl.ID, sl)
+	}()
+
 	return nil
 }
 
 // --- REST API HANDLERS -------------------------------------------------
+
+// POST /api/login
+func (ws *WebServer) handlerLogin(ctx *routing.Context) error {
+	s, err := ws.sessions.Get(ctx.RequestCtx, "session")
+	if err != nil {
+		return jsonError(ctx, err, statusInternalServerError)
+	}
+	return jsonError(ctx, s.Save(ctx.RequestCtx), statusInternalServerError)
+}
 
 // GET /api/shortlinks
 func (ws *WebServer) handlerGetShortLinks(ctx *routing.Context) error {
@@ -166,8 +229,8 @@ func (ws *WebServer) handlerGetShortLinks(ctx *routing.Context) error {
 		if err != nil {
 			return jsonError(ctx, err, statusBadRequest)
 		}
-		if from < 1 {
-			return jsonError(ctx, errors.New("from must be larger than 0"), statusBadRequest)
+		if from < 0 {
+			return jsonError(ctx, errors.New("from must be at leats 0"), statusBadRequest)
 		}
 	}
 

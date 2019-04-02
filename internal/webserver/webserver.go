@@ -3,6 +3,7 @@ package webserver
 import (
 	"errors"
 
+	"github.com/go-gem/sessions"
 	routing "github.com/qiangxue/fasthttp-routing"
 	"github.com/valyala/fasthttp"
 	"github.com/zekroTJA/slms/internal/auth"
@@ -12,19 +13,21 @@ import (
 // A WebServer handles the REST API
 // connections.
 type WebServer struct {
-	db     database.Middleware
-	auth   auth.Provider
-	config *Config
-	server *fasthttp.Server
-	router *routing.Router
+	db       database.Middleware
+	auth     auth.Provider
+	sessions sessions.Store
+	config   *Config
+	server   *fasthttp.Server
+	router   *routing.Router
 }
 
 // Config contains the configuration
 // values for the WebServer.
 type Config struct {
-	Address      string     `json:"address"`
-	APITokenHash string     `json:"api_token_hash"`
-	TLS          *ConfigTLS `json:"tls"`
+	Address         string     `json:"address"`
+	APITokenHash    string     `json:"api_token_hash"`
+	SessionStoreKey string     `json:"session_store_key"`
+	TLS             *ConfigTLS `json:"tls"`
 }
 
 // ConfigTLS contains the configuration
@@ -46,11 +49,15 @@ func NewWebServer(conf *Config, db database.Middleware, authProvider auth.Provid
 
 	router := routing.New()
 
+	cookieStore := sessions.NewCookieStore([]byte(conf.SessionStoreKey))
+	cookieStore.MaxAge(600)
+
 	ws := &WebServer{
-		auth:   authProvider,
-		db:     db,
-		config: conf,
-		router: router,
+		auth:     authProvider,
+		sessions: cookieStore,
+		db:       db,
+		config:   conf,
+		router:   router,
 		server: &fasthttp.Server{
 			Handler: router.HandleRequest,
 		},
@@ -62,7 +69,7 @@ func NewWebServer(conf *Config, db database.Middleware, authProvider auth.Provid
 }
 
 func (ws *WebServer) registerHandlers() {
-	ws.router.Use(ws.handlerHeaderServer)
+	ws.router.Use(ws.handlerHeaderServer, ws.handlerFileServer)
 
 	// /:SHORT
 	ws.router.Get("/<short>", ws.handlerShort)
@@ -71,8 +78,8 @@ func (ws *WebServer) registerHandlers() {
 	api := ws.router.Group("/api")
 	api.Use(ws.handlerAuth)
 
-	// /api/checkauth
-	api.Get("/checkauth")
+	// /api/login
+	api.Post("/login", ws.handlerLogin)
 
 	// /api/shortlinks
 	shortLinks := api.Get("/shortlinks", ws.handlerGetShortLinks)

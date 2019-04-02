@@ -63,7 +63,7 @@ lint:
 PHONY += run
 run:
 	$(GO) run -v \
-		$(CURDIR)/cmd/$(APPNAME) -c $(CONFIG)
+		$(CURDIR)/cmd/$(APPNAME) -c $(CONFIG) -l 5
 
 PHONY += cleanup
 cleanup:

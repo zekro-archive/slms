@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 )
@@ -10,7 +9,6 @@ var chars = []rune("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWX
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
-	fmt.Println("test123")
 }
 
 // GetRandString returnes a random stirng

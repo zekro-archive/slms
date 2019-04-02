@@ -11,5 +11,5 @@ type ShortLink struct {
 	ShortLink string    `json:"short_link"`
 	Created   time.Time `json:"created"`
 	Accesses  int       `json:"accesses"`
-	Edited    time.Time `json:"time"`
+	Edited    time.Time `json:"edited"`
 }
