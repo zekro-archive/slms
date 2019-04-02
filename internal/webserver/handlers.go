@@ -291,7 +291,7 @@ func (ws *WebServer) handlerGetShortLink(ctx *routing.Context) error {
 	return jsonResponse(ctx, sl, statusOK)
 }
 
-// POST /api/shortlink/:ID
+// POST /api/shortlinks/:ID
 func (ws *WebServer) handlerEditShortLink(ctx *routing.Context) error {
 	slUpdated := new(shortlink.ShortLink)
 	if err := parseJSONBody(ctx, slUpdated); err != nil {
