@@ -24,9 +24,12 @@ type MySQL struct {
 
 type prepStmts struct {
 	getSLByID    *sql.Stmt
+	getSLs       *sql.Stmt
 	getSLByRoot  *sql.Stmt
 	getSLByShort *sql.Stmt
 	updateSLByID *sql.Stmt
+	insertSL     *sql.Stmt
+	deleteSLByID *sql.Stmt
 }
 
 // Config contains the configuration
@@ -75,6 +78,13 @@ func (m *MySQL) prepStatements() error {
 			"WHERE `deleted` = 0 AND `id` = ?;")
 	mErr.Append(err)
 
+	m.stmts.getSLs, err = m.db.Prepare(
+		"SELECT `id`, `rootlink`, `shortlink`, `created`, `accesses`, `edited` FROM `shortlinks` " +
+			"WHERE `deleted` = 0 " +
+			"ORDER BY `created` DESC " +
+			"LIMIT ?, ?;")
+	mErr.Append(err)
+
 	m.stmts.getSLByRoot, err = m.db.Prepare(
 		"SELECT `id`, `rootlink`, `shortlink`, `created`, `accesses`, `edited` FROM `shortlinks` " +
 			"WHERE `deleted` = 0 AND `rootlink` = ?;")
@@ -88,6 +98,15 @@ func (m *MySQL) prepStatements() error {
 	m.stmts.updateSLByID, err = m.db.Prepare(
 		"UPDATE `shortlinks` SET `shortlink` = ?, `rootlink` = ? " +
 			"WHERE `id` = ?;")
+	mErr.Append(err)
+
+	m.stmts.insertSL, err = m.db.Prepare(
+		"INSERT INTO `shortlinks` (`rootlink`, `shortlink`) " +
+			"VALUES (?, ?);")
+	mErr.Append(err)
+
+	m.stmts.deleteSLByID, err = m.db.Prepare(
+		"UPDATE `shortlinks` SET `deleted` = 1 WHERE `id` = ?;")
 	mErr.Append(err)
 
 	return mErr.Concat()
@@ -139,7 +158,63 @@ func (m *MySQL) getShortLinkWithStrategy(ident string, strategy *sql.Stmt) (*sho
 	return sl, mErr.Concat()
 }
 
+func (m *MySQL) GetShortLinks(from, limit int) ([]*shortlink.ShortLink, error) {
+	rows, err := m.stmts.getSLs.Query(from, limit)
+	if err == sql.ErrNoRows {
+		return make([]*shortlink.ShortLink, 0), nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	sls := make([]*shortlink.ShortLink, limit)
+	i := 0
+	for rows.Next() {
+		var created, edited database.Timestamp
+		sl := new(shortlink.ShortLink)
+		err = rows.Scan(
+			&sl.ID, &sl.RootLink, &sl.ShortLink, &created, &sl.Accesses, &edited)
+		if err != nil {
+			return nil, err
+		}
+
+		sl.Created, err = created.ToTime(timeFormat)
+		if err != nil {
+			return nil, err
+		}
+
+		sl.Edited, err = edited.ToTime(timeFormat)
+		if err != nil {
+			return nil, err
+		}
+
+		sls[i] = sl
+		i++
+	}
+
+	if i < limit {
+		sls = sls[:i]
+	}
+
+	return sls, nil
+}
+
 func (m *MySQL) UpdateShortLink(id int, updated *shortlink.ShortLink) error {
 	_, err := m.stmts.updateSLByID.Exec(updated.ShortLink, updated.RootLink, id)
+	return err
+}
+
+func (m *MySQL) CreateShortLink(sl *shortlink.ShortLink) (*shortlink.ShortLink, error) {
+	_, err := m.stmts.insertSL.Exec(sl.RootLink, sl.ShortLink)
+	if err != nil {
+		return nil, err
+	}
+
+	newSl, err := m.GetShortLink("", "", sl.ShortLink)
+	return newSl, err
+}
+
+func (m *MySQL) DeleteShortLink(id int) error {
+	_, err := m.stmts.deleteSLByID.Exec(id)
 	return err
 }

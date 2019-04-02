@@ -48,7 +48,7 @@ $(BIN):
 	$(GO) build  \
 		-v -o $@ -ldflags "\
 			-X $(PACKAGE)/$(LDPAKAGE).AppVersion=$(TAG) \
-			-X $(PACKAGE)/$(LDPAKAGE).AppVersion=$(TAG) \
+			-X $(PACKAGE)/$(LDPAKAGE).AppCommit=$(COMMIT) \
 			-X $(PACKAGE)/$(LDPAKAGE).Release=TRUE" \
 		$(CURDIR)/cmd/$(APPNAME)
 

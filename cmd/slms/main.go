@@ -55,7 +55,7 @@ func main() {
 	// WEB SERVER //
 	////////////////
 
-	authProvider := auth.NewTokenAuthProvider(cfg.WebServer.APIToken)
+	authProvider := auth.NewTokenAuthProvider(cfg.WebServer.APITokenHash)
 
 	logger.Info("WEBSERVER :: running at address %s", cfg.WebServer.Address)
 	if !cfg.WebServer.TLS.Use {

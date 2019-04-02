@@ -5,7 +5,7 @@ database:
   username: slms
 web_server:
   address: :443
-  api_token: ""
+  api_token_hash: ""
   tls:
     cert_file: /var/cert/example.com.cer
     key_file: /var/cert/example.com.key

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"strings"
 	"time"
 
 	"github.com/zekroTJA/slms/internal/shortlink"
@@ -13,7 +14,11 @@ type Timestamp []uint8
 
 // ToTime parses the timestamp to a time object
 func (t Timestamp) ToTime(format string) (time.Time, error) {
-	return time.Parse(format, string(t))
+	tobj, err := time.Parse(format, string(t))
+	if err != nil && strings.Contains(err.Error(), "out of range") {
+		return time.Time{}, nil
+	}
+	return tobj, err
 }
 
 // The Middleware interface describes
@@ -32,8 +37,18 @@ type Middleware interface {
 	// database wether by id, root or short link
 	// (excatly in this order).
 	GetShortLink(id, root, short string) (*shortlink.ShortLink, error)
-
+	// GetShortLinks returns a list of short links which
+	// is ordered by created date descending between
+	// from index and limit ammount.
+	GetShortLinks(from, limit int) ([]*shortlink.ShortLink, error)
 	// UpdateShortLink updates a short link by
 	// all values contained in updated.
 	UpdateShortLink(id int, updated *shortlink.ShortLink) error
+	// CreateShortLink creates a new shortlink
+	// entry in the database and returnes the
+	// new shortlink object whis was created.
+	CreateShortLink(sl *shortlink.ShortLink) (*shortlink.ShortLink, error)
+	// Deletes a shortlink from the database
+	// or marks it at least as unavailable.
+	DeleteShortLink(id int) error
 }

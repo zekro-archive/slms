@@ -17,15 +17,15 @@ var (
 // method using basic header based authentication
 // tokens.
 type TokenAuthProvider struct {
-	token string
+	tokenHash string
 }
 
 // NewTokenAuthProvider creates a new instance
 // of TokenAuthProvider passing the token to be
-// used for authentication.
-func NewTokenAuthProvider(token string) *TokenAuthProvider {
+// used for authentication as bcrypt hash.
+func NewTokenAuthProvider(tokenHash string) *TokenAuthProvider {
 	return &TokenAuthProvider{
-		token: token,
+		tokenHash: tokenHash,
 	}
 }
 
@@ -43,7 +43,7 @@ func (tap *TokenAuthProvider) Authenticate(ctx *routing.Context) (interface{}, e
 		return nil, ErrUnauthorized
 	}
 
-	if authValSplit[1] != tap.token {
+	if !CheckHash(authValSplit[1], tap.tokenHash) {
 		return nil, ErrUnauthorized
 	}
 

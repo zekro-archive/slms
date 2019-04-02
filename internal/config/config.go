@@ -21,8 +21,8 @@ var (
 // Default config for new config files.
 var defConf = &Main{
 	WebServer: &webserver.Config{
-		Address:  ":443",
-		APIToken: "",
+		Address:      ":443",
+		APITokenHash: "",
 		TLS: &webserver.ConfigTLS{
 			Use:      true,
 			CertFile: "/var/cert/example.com.cer",

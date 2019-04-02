@@ -74,6 +74,17 @@
   version = "v20180529"
 
 [[projects]]
+  branch = "master"
+  digest = "1:9d5b5d543996dd584da1db1e0de1926f3e4c3a8dba0fa2f8db70f3ebee2342e0"
+  name = "golang.org/x/crypto"
+  packages = [
+    "bcrypt",
+    "blowfish",
+  ]
+  pruneopts = "UT"
+  revision = "a5d413f7728c81fb97d96a2b722368945f651e78"
+
+[[projects]]
   digest = "1:c25289f43ac4a68d88b02245742347c94f1e108c534dda442188015ff80669b3"
   name = "google.golang.org/appengine"
   packages = ["cloudsql"]
@@ -98,6 +109,7 @@
     "github.com/op/go-logging",
     "github.com/qiangxue/fasthttp-routing",
     "github.com/valyala/fasthttp",
+    "golang.org/x/crypto/bcrypt",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

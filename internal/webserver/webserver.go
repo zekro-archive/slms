@@ -22,9 +22,9 @@ type WebServer struct {
 // Config contains the configuration
 // values for the WebServer.
 type Config struct {
-	Address  string     `json:"address"`
-	APIToken string     `json:"api_token"`
-	TLS      *ConfigTLS `json:"tls"`
+	Address      string     `json:"address"`
+	APITokenHash string     `json:"api_token_hash"`
+	TLS          *ConfigTLS `json:"tls"`
 }
 
 // ConfigTLS contains the configuration
@@ -40,7 +40,7 @@ type ConfigTLS struct {
 // of WebServer and registers all set
 // request handlers.
 func NewWebServer(conf *Config, db database.Middleware, authProvider auth.Provider) (*WebServer, error) {
-	if len(conf.APIToken) < 8 {
+	if len(conf.APITokenHash) < 8 {
 		return nil, errors.New("api_token must have at least 8 characters")
 	}
 
@@ -62,11 +62,26 @@ func NewWebServer(conf *Config, db database.Middleware, authProvider auth.Provid
 }
 
 func (ws *WebServer) registerHandlers() {
-	api := ws.router.Group("/api")
+	ws.router.Use(ws.handlerHeaderServer)
 
+	// /:SHORT
+	ws.router.Get("/<short>", ws.handlerShort)
+
+	// /api
+	api := ws.router.Group("/api")
 	api.Use(ws.handlerAuth)
+
+	// /api/checkauth
+	api.Get("/checkauth")
+
+	// /api/shortlinks
+	shortLinks := api.Get("/shortlinks", ws.handlerGetShortLinks)
+	shortLinks.Post(ws.handlerCreateShortLink)
+
+	// /api/shortlinks/:ID
 	shortLinksID := api.Get("/shortlinks/<id>", ws.handlerGetShortLink)
 	shortLinksID.Post(ws.handlerEditShortLink)
+	shortLinksID.Delete(ws.handlerDeleteShortLink)
 }
 
 // ListenAndServeBlocking starts listening for HTTP requests
