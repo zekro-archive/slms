@@ -12,7 +12,7 @@
 
 # Introduction
 
-SLMS is a server component where you can create and manage shortlinks which redirekt to the set root urls. You can create shortlinks with defined names or random strings. There is a small analytics component counting accesses on your shortlinks and when the last access was taken. All data is saved in a MySql-Database and can be accessed over a web interface.
+SLMS is a simple server solution which provides managable short links for your domain. You can create, edit and delete short links in a simple web interface which will relocate the user of these links to the defined root link location. Each *(uncached)* access will be recorded *(anonymously)* to provide simple access analytics. 
 
 ---
 
@@ -25,16 +25,22 @@ SLMS is a server component where you can create and manage shortlinks which redi
 
 ---
 
-# 3rd Party Dependencies
+# Why v.2.0?
 
-- [gorilla/mux](https://github.com/gorilla/mux)
-- [go-sql-driver/mysql](https://github.com/go-sql-driver/mysql)
-- [go-yaml/yaml.v2](https://github.com/go-yaml/yaml/tree/v2.2.1)
+I realy had intrest on resuming developing on this project and I wanted to get deeper into creating REST API's with go. So I thought about experimenting with `fasthttp` and `fasthttp-routing` instead of `net/http` and `gorilla/mux` *(which I have used in v.1.0)*. Also, I wanted to enhance the project layout and the database structure, so I've decided to re-create this whole project.
 
 ---
 
-© 2018 zekro Development  
+# 3rd Party Dependencies
 
-[zekro.de](https://zekro.de) | contact[at]zekro.de
+- [valayala/fasthttp](https://github.com/valyala/fasthttp)
+- [qiangxue/fasthttp-routing](https://github.com/qiangxue/fasthttp-routing)
+- [op/go-logging](https://github.com/op/go-logging)
+- [ghodss/yaml](https://github.com/ghodss/yaml)
+- [go-sql-driver/mysql](https://github.com/go-sql-driver/mysql)
+- [go-gem/sessions](https://github.com/go-gem/sessions)
 
+---
 
+© 2019 Ringo Hoffmann (zekro Development)  
+Covered by MIT Licence.

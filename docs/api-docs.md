@@ -1,7 +1,17 @@
 # SLMS REST API
 
 ## Authorization
-<!-- TODO: Write stuff. -->
+
+Generally, every API endpoint request needs to be authorized.
+
+For authorizing your request, you need to send a valid `Basic` authentication token *(which is defined in the servers configuration)* as `Authorization` header.
+
+```
+> POST /api/login HTTP/1.1
+> Authorization: Basic yourAuthTokenHere
+```
+
+If you are requesting the [`POST /api/login`](#session-login) endpoint with a valid Basic Auhtorization header, you will receive a session token. This token can also be used to authenticate against the API instead of the authorization header. This cookie has a lifetime of 10 minutes after the login request and will not be extended after each following request.
 
 ## Parameters
 
@@ -37,11 +47,50 @@ An error response from the API contains the status code as header and an error d
 ```
 
 ## Rate Limits
-<!-- TODO: Write stuff. -->
+
+Rate limits are applied on a per-route and per-connection basis. The rate limit counter are based on a simple [token bucket](https://en.wikipedia.org/wiki/Token_bucket) system.
+
+Information about the current limiter status are passed yb each response in following headers:
+
+| Header Name | Description |
+|-------------|-------------|
+| `X-RateLimit-Limit` | The absolute ammount of tokens which can be used in one burst. |
+| `X-RateLimit-Remaining` | The remaining tokens after this request. |
+| `X-RateLimit-Reset` | The UNIX timestamp you need to wait until you can make another request. This value is `0` as long as at least `1` token is available after the request. |
+
+Here you can see an example response:
+```
+< HTTP/1.1 200 OK
+< Date: Wed, 03 Apr 2019 19:24:35 GMT
+< Content-Length: 0
+< X-Ratelimit-Limit: 3
+< X-Ratelimit-Remaining: 0
+< X-Ratelimit-Reset: 1554297886
+```
 
 ---
 
 ## Endpoints
+
+- [Session Login](#session-login)  
+  `POST /api/login`
+
+- [Get Short Link List](#get-short-link-list)  
+  `GET /api/shortlinks`
+
+- [Create Short Link](#create-short-link)  
+  `POST /api/shortlinks`
+
+- [Get Short Link](#get-short-link)  
+  `GET /api/shortlinks/:ID`
+
+- [Modify Short Link](#modify-short-link)  
+  `POST /api/shortlinks/:ID`
+
+- [Delete Short Link](#delete-short-link)  
+  `DELETE /api/shortlinks/:ID`
+
+
 
 ### Session Login
 
@@ -126,37 +175,6 @@ An error response from the API contains the status code as header and an error d
 
 ---
 
-### Get Short Link
-
-> GET /api/shortlinks/:ID
-
-#### Parameters
-
-| Name | Type | Description |
-|------|------|-------------|
-| `ID` | `path`: `string` | The unique ID *or* the short identifier of the short link. |
-
-#### Response
-
-```
-< HTTP/1.1 200 OK
-< Date: Tue, 02 Apr 2019 20:10:11 GMT
-< Content-Type: application/json
-< Content-Length: 179
-```
-```json
-{
-  "id": 12,
-  "root_link": "https://github.com/zekroTJA/slms",
-  "short_link": "slms",
-  "created": "2018-10-07T12:20:36Z",
-  "accesses": 9,
-  "edited": "2019-04-02T09:11:19Z"
-}
-```
-
----
-
 ### Create Short Link
 
 > POST /api/shortlinks
@@ -184,6 +202,37 @@ An error response from the API contains the status code as header and an error d
   "created": "2019-04-02T22:24:02Z",
   "accesses": 0,
   "edited": "2019-04-02T22:24:02Z"
+}
+```
+
+---
+
+### Get Short Link
+
+> GET /api/shortlinks/:ID
+
+#### Parameters
+
+| Name | Type | Description |
+|------|------|-------------|
+| `ID` | `path`: `string` | The unique ID *or* the short identifier of the short link. |
+
+#### Response
+
+```
+< HTTP/1.1 200 OK
+< Date: Tue, 02 Apr 2019 20:10:11 GMT
+< Content-Type: application/json
+< Content-Length: 179
+```
+```json
+{
+  "id": 12,
+  "root_link": "https://github.com/zekroTJA/slms",
+  "short_link": "slms",
+  "created": "2018-10-07T12:20:36Z",
+  "accesses": 9,
+  "edited": "2019-04-02T09:11:19Z"
 }
 ```
 
