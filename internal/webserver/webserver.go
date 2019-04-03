@@ -2,6 +2,7 @@ package webserver
 
 import (
 	"errors"
+	"time"
 
 	"github.com/go-gem/sessions"
 	routing "github.com/qiangxue/fasthttp-routing"
@@ -13,12 +14,13 @@ import (
 // A WebServer handles the REST API
 // connections.
 type WebServer struct {
-	db       database.Middleware
-	auth     auth.Provider
-	sessions sessions.Store
-	config   *Config
-	server   *fasthttp.Server
-	router   *routing.Router
+	db           database.Middleware
+	auth         auth.Provider
+	sessions     sessions.Store
+	config       *Config
+	server       *fasthttp.Server
+	router       *routing.Router
+	limitManager *RateLimitManager
 }
 
 // Config contains the configuration
@@ -54,11 +56,12 @@ func NewWebServer(conf *Config, db database.Middleware, authProvider auth.Provid
 	cookieStore.MaxAge(600)
 
 	ws := &WebServer{
-		auth:     authProvider,
-		sessions: cookieStore,
-		db:       db,
-		config:   conf,
-		router:   router,
+		auth:         authProvider,
+		sessions:     cookieStore,
+		db:           db,
+		config:       conf,
+		router:       router,
+		limitManager: NewRateLimitManager(),
 		server: &fasthttp.Server{
 			Handler: sessions.ClearHandler(router.HandleRequest),
 		},
@@ -72,24 +75,39 @@ func NewWebServer(conf *Config, db database.Middleware, authProvider auth.Provid
 func (ws *WebServer) registerHandlers() {
 	ws.router.Use(ws.handlerHeaderServer, ws.handlerFileServer)
 
-	// /:SHORT
+	// GET /:SHORT
 	ws.router.Get("/<short>", ws.handlerShort)
 
-	// /api
+	// GROUP # /api
 	api := ws.router.Group("/api")
 	api.Use(ws.handlerAuth)
 
-	// /api/login
-	api.Post("/login", ws.handlerLogin)
+	// POST /api/login
+	api.Post("/login",
+		ws.limitManager.NewRateLimitHandler(10*time.Second, 3).Handler,
+		ws.handlerLogin)
 
-	// /api/shortlinks
-	shortLinks := api.Get("/shortlinks", ws.handlerGetShortLinks)
-	shortLinks.Post(ws.handlerCreateShortLink)
+	// GET /api/shortlinks
+	shortLinks := api.Get("/shortlinks",
+		ws.limitManager.NewRateLimitHandler(2*time.Second, 5).Handler,
+		ws.handlerGetShortLinks)
+	// POST /api/shortlinks
+	shortLinks.Post(
+		ws.limitManager.NewRateLimitHandler(3*time.Second, 3).Handler,
+		ws.handlerCreateShortLink)
 
-	// /api/shortlinks/:ID
-	shortLinksID := api.Get("/shortlinks/<id>", ws.handlerGetShortLink)
-	shortLinksID.Post(ws.handlerEditShortLink)
-	shortLinksID.Delete(ws.handlerDeleteShortLink)
+	// GET /api/shortlinks/:ID
+	shortLinksID := api.Get("/shortlinks/<id>",
+		ws.limitManager.NewRateLimitHandler(1*time.Second, 5).Handler,
+		ws.handlerGetShortLink)
+	// POST /api/shortlinks/:ID
+	shortLinksID.Post(
+		ws.limitManager.NewRateLimitHandler(2*time.Second, 3).Handler,
+		ws.handlerEditShortLink)
+	// DELETE /api/shortlinks/:ID
+	shortLinksID.Delete(
+		ws.limitManager.NewRateLimitHandler(2*time.Second, 5).Handler,
+		ws.handlerDeleteShortLink)
 }
 
 // ListenAndServeBlocking starts listening for HTTP requests
