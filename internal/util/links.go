@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 )
 
@@ -32,6 +33,23 @@ func CheckIfValidLink(url string, httpsOnly bool) error {
 
 	if res.StatusCode >= 400 {
 		return fmt.Errorf("ULR request failed with status code %d", res.StatusCode)
+	}
+
+	return nil
+}
+
+// CheckIfValidShort checks if the short link is
+// contained in the reserved string or if the short
+// link does not single-result match the allowedRx.
+// The short link is qualified as valid if the
+// returned error is nil.
+func CheckIfValidShort(sl, reserved string, allowedRx *regexp.Regexp) error {
+	if strings.Contains(reserved, sl) {
+		return fmt.Errorf("short link is reserved")
+	}
+
+	if len(allowedRx.FindAllString(sl, -1)) > 1 {
+		return fmt.Errorf("unallowed characters")
 	}
 
 	return nil

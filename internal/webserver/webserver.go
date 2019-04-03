@@ -84,29 +84,29 @@ func (ws *WebServer) registerHandlers() {
 
 	// POST /api/login
 	api.Post("/login",
-		ws.limitManager.NewRateLimitHandler(10*time.Second, 3).Handler,
+		ws.limitManager.GetHandler(10*time.Second, 3),
 		ws.handlerLogin)
 
 	// GET /api/shortlinks
 	shortLinks := api.Get("/shortlinks",
-		ws.limitManager.NewRateLimitHandler(2*time.Second, 5).Handler,
+		ws.limitManager.GetHandler(2*time.Second, 5),
 		ws.handlerGetShortLinks)
 	// POST /api/shortlinks
 	shortLinks.Post(
-		ws.limitManager.NewRateLimitHandler(3*time.Second, 3).Handler,
+		ws.limitManager.GetHandler(3*time.Second, 3),
 		ws.handlerCreateShortLink)
 
 	// GET /api/shortlinks/:ID
 	shortLinksID := api.Get("/shortlinks/<id>",
-		ws.limitManager.NewRateLimitHandler(1*time.Second, 5).Handler,
+		ws.limitManager.GetHandler(1*time.Second, 5),
 		ws.handlerGetShortLink)
 	// POST /api/shortlinks/:ID
 	shortLinksID.Post(
-		ws.limitManager.NewRateLimitHandler(2*time.Second, 3).Handler,
+		ws.limitManager.GetHandler(2*time.Second, 3),
 		ws.handlerEditShortLink)
 	// DELETE /api/shortlinks/:ID
 	shortLinksID.Delete(
-		ws.limitManager.NewRateLimitHandler(2*time.Second, 5).Handler,
+		ws.limitManager.GetHandler(2*time.Second, 5),
 		ws.handlerDeleteShortLink)
 }
 

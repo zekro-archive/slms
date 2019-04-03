@@ -20,17 +20,6 @@ type RateLimitManager struct {
 	limits *timedmap.TimedMap
 }
 
-// A RateLimitHandler provides a
-// fasthttp-routing handler for
-// per-route connection-based rate
-// limiting.
-type RateLimitHandler struct {
-	routing.Handler
-
-	limit time.Duration
-	burst int
-}
-
 // NewRateLimitManager creates a new instance
 // of RateLimitManager.
 func NewRateLimitManager() *RateLimitManager {
@@ -39,10 +28,18 @@ func NewRateLimitManager() *RateLimitManager {
 	}
 }
 
-// NewRateLimitHandler creates a new per-route
-// connection-based limiter handler.
-func (rlm *RateLimitManager) NewRateLimitHandler(limit time.Duration, burst int) *RateLimitHandler {
-	handler := func(ctx *routing.Context) error {
+// GetHandler returns a new afsthttp-routing
+// handler which manages per-route and connection-
+// based rate limiting.
+// Rate limit information is added as 'X-RateLimit-Limit',
+// 'X-RateLimit-Remaining' and 'X-RateLimit-Reset'
+// headers.
+// This handler aborts the execution of following
+// handlers when rate limit is exceed and throws
+// a json error body in combination with a 429
+// status code.
+func (rlm *RateLimitManager) GetHandler(limit time.Duration, burst int) routing.Handler {
+	return func(ctx *routing.Context) error {
 		ok, res := rlm.getLimiter(ctx.RemoteIP().String(), limit, burst).Reserve()
 
 		ctx.Response.Header.Set("X-RateLimit-Limit", fmt.Sprintf("%d", res.Burst))
@@ -58,12 +55,6 @@ func (rlm *RateLimitManager) NewRateLimitHandler(limit time.Duration, burst int)
 		}
 
 		return nil
-	}
-
-	return &RateLimitHandler{
-		limit:   limit,
-		burst:   burst,
-		Handler: handler,
 	}
 }
 

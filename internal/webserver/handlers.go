@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/zekroTJA/slms/internal/util"
 )
 
+// Error Objects
 var (
 	errNotFound           = errors.New("not found")
 	errUpdatedBoth        = errors.New("you can not update short and root link at once")
@@ -23,22 +25,24 @@ var (
 	errInvalidArguments   = errors.New("invalid arguments")
 )
 
-const (
-	statusOK                  = 200
-	statusMovedpermanently    = 301
-	statusBadRequest          = 400
-	statusUnauthorized        = 401
-	statusNotFound            = 404
-	statusInternalServerError = 500
-)
-
+// Static File Handlers
 var (
 	fileHandlerPages  = fasthttp.FSHandler("./web/pages", 1)
 	fileHandlerStatic = fasthttp.FSHandler("./web/static", 2)
 )
 
+var allowedRx = regexp.MustCompile(`[\w_\-]+`)
+
+const reservedWords = "manage"
+
 // --- HELPER FUNCTIONS AND HANDLERS -------------------------------------
 
+// jsonError writes the error message of err and the
+// passed status to response context and aborts the
+// execution of following registered handlers ONLY IF
+// err != nil.
+// This function always returns a nil error that the
+// default error handler can be bypassed.
 func jsonError(ctx *routing.Context, err error, status int) error {
 	if err != nil {
 		ctx.Response.Header.SetContentType("application/json")
@@ -50,25 +54,53 @@ func jsonError(ctx *routing.Context, err error, status int) error {
 	return nil
 }
 
+// jsonResponse tries to parse the passed interface v
+// to JSON and writes it to the response context body
+// as same as the passed status code.
+// If the parsing fails, this will result in a jsonError
+// output of the error with status 500.
+// This function always returns a nil error.
 func jsonResponse(ctx *routing.Context, v interface{}, status int) error {
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
-		return jsonError(ctx, err, statusInternalServerError)
+		return jsonError(ctx, err, fasthttp.StatusInternalServerError)
 	}
 
 	ctx.Response.Header.SetContentType("application/json")
 	ctx.SetStatusCode(status)
 	_, err = ctx.Write(data)
 
-	return jsonError(ctx, err, statusInternalServerError)
+	return jsonError(ctx, err, fasthttp.StatusInternalServerError)
 }
 
+// parseJSONBody tries to parse a requests JSON
+// body to the passed object pointer. If the
+// parsing fails, this will result in a jsonError
+// output with status 400.
+// This function always returns a nil error.
 func parseJSONBody(ctx *routing.Context, v interface{}) error {
 	data := ctx.PostBody()
 	err := json.Unmarshal(data, v)
-	return jsonError(ctx, err, statusBadRequest)
+	return jsonError(ctx, err, fasthttp.StatusBadRequest)
 }
 
+// getShortLink tries to get the ID or short from the path
+// parameter <id> and attempts to find the corresponding
+// short link database entry weather by ID or by short string.
+// If the attempt fails, this results in a jsonError response
+// with wether status code 404 if no link was found or 500 if
+// the search attempt in the database failed.
+//
+// Parameters:
+//   ctx         : the routing.Context of the request
+//   onlyByShort : bypasses the seatch by ID and attempts to find
+//                 shortlink only by short string
+//
+// Returns:
+//   *ShortLink : the found short link
+//   bool       : equals true if a shortlink was found
+//                and false, if no link was found or an
+//                error occured
 func (ws *WebServer) getShortLink(ctx *routing.Context, onlyByShort bool) (*shortlink.ShortLink, bool) {
 	var sl *shortlink.ShortLink
 	var err error
@@ -77,7 +109,7 @@ func (ws *WebServer) getShortLink(ctx *routing.Context, onlyByShort bool) (*shor
 	if !onlyByShort {
 		sl, err = ws.db.GetShortLink(id, "", "")
 		if err != nil {
-			jsonError(ctx, err, statusInternalServerError)
+			jsonError(ctx, err, fasthttp.StatusInternalServerError)
 			return nil, false
 		}
 	}
@@ -85,11 +117,11 @@ func (ws *WebServer) getShortLink(ctx *routing.Context, onlyByShort bool) (*shor
 	if sl == nil {
 		sl, err = ws.db.GetShortLink("", "", id)
 		if err != nil {
-			jsonError(ctx, err, statusInternalServerError)
+			jsonError(ctx, err, fasthttp.StatusInternalServerError)
 			return nil, false
 		}
 		if sl == nil {
-			jsonError(ctx, errNotFound, statusNotFound)
+			jsonError(ctx, errNotFound, fasthttp.StatusNotFound)
 			return nil, false
 		}
 	}
@@ -97,6 +129,13 @@ func (ws *WebServer) getShortLink(ctx *routing.Context, onlyByShort bool) (*shor
 	return sl, true
 }
 
+// checkRequestAuth first checks for a Basic auth
+// token as Authorization header. If the header
+// has no value or the value does not match with
+// the defined token hash, the function attempts to
+// decode a session from the passed cookie header.
+// If both fails, the auhtorization fails and false
+// will be returned.
 func (ws *WebServer) checkRequestAuth(ctx *routing.Context) bool {
 	_, err := ws.auth.Authenticate(ctx)
 	if err != nil {
@@ -116,13 +155,18 @@ func (ws *WebServer) checkRequestAuth(ctx *routing.Context) bool {
 
 // --- GENERAL HANDLERS --------------------------------------------------
 
-// Cahnges response "Server" header value
+// handlerHeaderServer changes response "Server" header value.
 func (ws *WebServer) handlerHeaderServer(ctx *routing.Context) error {
 	ctx.Response.Header.SetServer(
 		fmt.Sprintf("slms v.%s (%s)", static.AppVersion, static.AppCommit))
 	return nil
 }
 
+// handlerFileServer checks if the request path points to a
+// defined static resource location and then uses the specified
+// file server for responding to the request.
+// If no valid authentication was provided, an attempt to access
+// static page files will always serve the login.html page.
 func (ws *WebServer) handlerFileServer(ctx *routing.Context) error {
 	path := string(ctx.URI().Path())
 
@@ -145,22 +189,25 @@ func (ws *WebServer) handlerFileServer(ctx *routing.Context) error {
 	return nil
 }
 
-// General Authorization handler
+// handlerAuth manages general authorization for
+// API endpoints resulting in a jsonError on
+// unauthorized request.
 func (ws *WebServer) handlerAuth(ctx *routing.Context) error {
 	if !ws.checkRequestAuth(ctx) {
-		return jsonError(ctx, auth.ErrUnauthorized, statusUnauthorized)
+		return jsonError(ctx, auth.ErrUnauthorized, fasthttp.StatusUnauthorized)
 	}
 	return nil
 }
 
-// Actual short link handler
+// handlerShort handles short link redirect
+// requests.
 func (ws *WebServer) handlerShort(ctx *routing.Context) error {
 	short := ctx.Param("short")
 	ctx.Response.Header.SetContentType("text/html")
 
 	sl, err := ws.db.GetShortLink("", "", short)
 	if err != nil {
-		ctx.SetStatusCode(statusInternalServerError)
+		ctx.SetStatusCode(fasthttp.StatusInternalServerError)
 		ctx.SetBodyString(
 			"<html>" +
 				"<body>" +
@@ -174,13 +221,13 @@ func (ws *WebServer) handlerShort(ctx *routing.Context) error {
 	}
 
 	if sl == nil {
-		ctx.SetStatusCode(statusNotFound)
+		ctx.SetStatusCode(fasthttp.StatusNotFound)
 		ctx.SendFile("./web/pages/invalid.html")
 		ctx.Abort()
 		return nil
 	}
 
-	ctx.SetStatusCode(statusMovedpermanently)
+	ctx.SetStatusCode(fasthttp.StatusMovedPermanently)
 	ctx.Response.Header.Set("Location", sl.RootLink)
 	ctx.SetBodyString(
 		"<html>" +
@@ -206,9 +253,9 @@ func (ws *WebServer) handlerShort(ctx *routing.Context) error {
 func (ws *WebServer) handlerLogin(ctx *routing.Context) error {
 	s, err := ws.sessions.Get(ctx.RequestCtx, "session")
 	if err != nil {
-		return jsonError(ctx, err, statusInternalServerError)
+		return jsonError(ctx, err, fasthttp.StatusInternalServerError)
 	}
-	return jsonError(ctx, s.Save(ctx.RequestCtx), statusInternalServerError)
+	return jsonError(ctx, s.Save(ctx.RequestCtx), fasthttp.StatusInternalServerError)
 }
 
 // GET /api/shortlinks
@@ -221,32 +268,32 @@ func (ws *WebServer) handlerGetShortLinks(ctx *routing.Context) error {
 	if query.Has("from") {
 		from, err = strconv.Atoi(string(query.Peek("from")))
 		if err != nil {
-			return jsonError(ctx, err, statusBadRequest)
+			return jsonError(ctx, err, fasthttp.StatusBadRequest)
 		}
 		if from < 0 {
-			return jsonError(ctx, errors.New("from must be at leats 0"), statusBadRequest)
+			return jsonError(ctx, errors.New("from must be at leats 0"), fasthttp.StatusBadRequest)
 		}
 	}
 
 	if query.Has("limit") {
 		limit, err = strconv.Atoi(string(query.Peek("limit")))
 		if err != nil {
-			return jsonError(ctx, err, statusBadRequest)
+			return jsonError(ctx, err, fasthttp.StatusBadRequest)
 		}
 		if limit < 1 || limit > 1000 {
-			return jsonError(ctx, errors.New("limit must be in range (0, 1000]"), statusBadRequest)
+			return jsonError(ctx, errors.New("limit must be in range (0, 1000]"), fasthttp.StatusBadRequest)
 		}
 	}
 
 	sls, err := ws.db.GetShortLinks(from, limit)
 	if err != nil {
-		return jsonError(ctx, err, statusInternalServerError)
+		return jsonError(ctx, err, fasthttp.StatusInternalServerError)
 	}
 
 	return jsonResponse(ctx, map[string]interface{}{
 		"n":       len(sls),
 		"results": sls,
-	}, statusOK)
+	}, fasthttp.StatusOK)
 }
 
 // POST /api/shortlinks
@@ -254,11 +301,11 @@ func (ws *WebServer) handlerCreateShortLink(ctx *routing.Context) error {
 	newSl := new(shortlink.ShortLink)
 	err := parseJSONBody(ctx, newSl)
 	if err != nil {
-		return jsonError(ctx, err, statusBadRequest)
+		return jsonError(ctx, err, fasthttp.StatusBadRequest)
 	}
 
 	if newSl.RootLink == "" {
-		return jsonError(ctx, errInvalidArguments, statusBadRequest)
+		return jsonError(ctx, errInvalidArguments, fasthttp.StatusBadRequest)
 	}
 
 	if newSl.ShortLink == "" {
@@ -266,23 +313,27 @@ func (ws *WebServer) handlerCreateShortLink(ctx *routing.Context) error {
 	}
 
 	if err = util.CheckIfValidLink(newSl.RootLink, ws.config.OnlyHTTPSRootLink); err != nil {
-		return jsonError(ctx, err, statusBadRequest)
+		return jsonError(ctx, err, fasthttp.StatusBadRequest)
+	}
+
+	if err = util.CheckIfValidShort(newSl.ShortLink, reservedWords, allowedRx); err != nil {
+		return jsonError(ctx, err, fasthttp.StatusBadRequest)
 	}
 
 	exSl, err := ws.db.GetShortLink("", "", newSl.ShortLink)
 	if err != nil {
-		return jsonError(ctx, err, statusInternalServerError)
+		return jsonError(ctx, err, fasthttp.StatusInternalServerError)
 	}
 	if exSl != nil {
-		return jsonError(ctx, errShortAlreadyExists, statusBadRequest)
+		return jsonError(ctx, errShortAlreadyExists, fasthttp.StatusBadRequest)
 	}
 
 	resSl, err := ws.db.CreateShortLink(newSl)
 	if err != nil {
-		return jsonError(ctx, err, statusInternalServerError)
+		return jsonError(ctx, err, fasthttp.StatusInternalServerError)
 	}
 
-	return jsonResponse(ctx, resSl, statusOK)
+	return jsonResponse(ctx, resSl, fasthttp.StatusOK)
 }
 
 // GET /api/shortlinks/:ID
@@ -292,7 +343,7 @@ func (ws *WebServer) handlerGetShortLink(ctx *routing.Context) error {
 		return nil
 	}
 
-	return jsonResponse(ctx, sl, statusOK)
+	return jsonResponse(ctx, sl, fasthttp.StatusOK)
 }
 
 // POST /api/shortlinks/:ID
@@ -300,10 +351,6 @@ func (ws *WebServer) handlerEditShortLink(ctx *routing.Context) error {
 	slUpdated := new(shortlink.ShortLink)
 	if err := parseJSONBody(ctx, slUpdated); err != nil {
 		return err
-	}
-
-	if err := util.CheckIfValidLink(slUpdated.RootLink, ws.config.OnlyHTTPSRootLink); err != nil {
-		return jsonError(ctx, err, statusBadRequest)
 	}
 
 	sl, ok := ws.getShortLink(ctx, false)
@@ -315,14 +362,17 @@ func (ws *WebServer) handlerEditShortLink(ctx *routing.Context) error {
 	rootLinkUpdated := slUpdated.RootLink != "" && sl.RootLink != slUpdated.RootLink
 
 	if shortLinkUpdated && rootLinkUpdated {
-		return jsonError(ctx, errUpdatedBoth, statusBadRequest)
+		return jsonError(ctx, errUpdatedBoth, fasthttp.StatusBadRequest)
 	}
 
 	if shortLinkUpdated {
+		if err := util.CheckIfValidShort(slUpdated.ShortLink, reservedWords, allowedRx); err != nil {
+			return jsonError(ctx, err, fasthttp.StatusBadRequest)
+		}
 		if dsl, err := ws.db.GetShortLink("", "", slUpdated.ShortLink); err != nil {
-			return jsonError(ctx, err, statusInternalServerError)
+			return jsonError(ctx, err, fasthttp.StatusInternalServerError)
 		} else if dsl != nil {
-			return jsonError(ctx, errShortAlreadyExists, statusBadRequest)
+			return jsonError(ctx, errShortAlreadyExists, fasthttp.StatusBadRequest)
 		}
 	}
 
@@ -331,14 +381,17 @@ func (ws *WebServer) handlerEditShortLink(ctx *routing.Context) error {
 	}
 
 	if rootLinkUpdated {
+		if err := util.CheckIfValidLink(slUpdated.RootLink, ws.config.OnlyHTTPSRootLink); err != nil {
+			return jsonError(ctx, err, fasthttp.StatusBadRequest)
+		}
 		sl.RootLink = slUpdated.RootLink
 	}
 
 	if err := ws.db.UpdateShortLink(sl.ID, sl); err != nil {
-		return jsonError(ctx, err, statusInternalServerError)
+		return jsonError(ctx, err, fasthttp.StatusInternalServerError)
 	}
 
-	return jsonResponse(ctx, sl, statusOK)
+	return jsonResponse(ctx, sl, fasthttp.StatusOK)
 }
 
 // DELETE /api/shortlink/:ID
@@ -350,9 +403,9 @@ func (ws *WebServer) handlerDeleteShortLink(ctx *routing.Context) error {
 
 	err := ws.db.DeleteShortLink(sl.ID)
 	if err != nil {
-		return jsonError(ctx, err, statusInternalServerError)
+		return jsonError(ctx, err, fasthttp.StatusInternalServerError)
 	}
 
-	ctx.SetStatusCode(statusOK)
+	ctx.SetStatusCode(fasthttp.StatusOK)
 	return nil
 }
