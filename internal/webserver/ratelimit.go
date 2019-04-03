@@ -17,14 +17,21 @@ const (
 // A RateLimitManager maintains all
 // rate limiters for each connection.
 type RateLimitManager struct {
-	limits *timedmap.TimedMap
+	limits  *timedmap.TimedMap
+	handler []*rateLimitHandler
+}
+
+type rateLimitHandler struct {
+	id      int
+	handler routing.Handler
 }
 
 // NewRateLimitManager creates a new instance
 // of RateLimitManager.
 func NewRateLimitManager() *RateLimitManager {
 	return &RateLimitManager{
-		limits: timedmap.New(cleanupInterval),
+		limits:  timedmap.New(cleanupInterval),
+		handler: make([]*rateLimitHandler, 0),
 	}
 }
 
@@ -39,8 +46,14 @@ func NewRateLimitManager() *RateLimitManager {
 // a json error body in combination with a 429
 // status code.
 func (rlm *RateLimitManager) GetHandler(limit time.Duration, burst int) routing.Handler {
-	return func(ctx *routing.Context) error {
-		ok, res := rlm.getLimiter(ctx.RemoteIP().String(), limit, burst).Reserve()
+	rlh := &rateLimitHandler{
+		id: len(rlm.handler),
+	}
+
+	rlh.handler = func(ctx *routing.Context) error {
+		limiterID := fmt.Sprintf("%d#%s",
+			rlh.id, ctx.RemoteIP().String())
+		ok, res := rlm.getLimiter(limiterID, limit, burst).Reserve()
 
 		ctx.Response.Header.Set("X-RateLimit-Limit", fmt.Sprintf("%d", res.Burst))
 		ctx.Response.Header.Set("X-RateLimit-Remaining", fmt.Sprintf("%d", res.Remaining))
@@ -56,6 +69,10 @@ func (rlm *RateLimitManager) GetHandler(limit time.Duration, burst int) routing.
 
 		return nil
 	}
+
+	rlm.handler = append(rlm.handler, rlh)
+
+	return rlh.handler
 }
 
 // getLimiter tries to get an existent limiter

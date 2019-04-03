@@ -2,6 +2,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
+	"time"
+
+	"github.com/zekroTJA/slms/internal/static"
 
 	"github.com/zekroTJA/slms/internal/auth"
 
@@ -13,12 +18,38 @@ import (
 )
 
 var (
-	flagConfig = flag.String("c", "./config.yml", "config file location")
-	flagLogLvl = flag.Int("l", 4, "log level (see https://github.com/op/go-logging/blob/master/level.go#L20)")
+	flagConfig     = flag.String("c", "./config.yml", "config file location")
+	flagLogLvl     = flag.Int("l", 4, "log level (see https://github.com/op/go-logging/blob/master/level.go#L20)")
+	flagVersion    = flag.Bool("v", false, "display SLMS version")
+	flagHashPass   = flag.String("hash", "", "create a bcrypt hash of a password for config file")
+	flagHashRounds = flag.Int("rounds", 12, "bcrypt rounds for hashing password. "+
+		"Must be combined with 'hash' parameter. "+
+		"ATTENTION: Higher round values automatically increase server utilization on authentication exponentially!")
 )
 
 func main() {
 	flag.Parse()
+
+	if *flagVersion {
+		fmt.Printf("SLMS v.%s\nCommit: %s\n"+
+			"(c) 2019 Ringo Hoffmann (zekro Development)\n"+
+			"Covered by MIT Licence.\n",
+			static.AppVersion, static.AppCommit)
+		os.Exit(0)
+	}
+
+	if *flagHashPass != "" {
+		start := time.Now()
+		s, err := auth.CreateHash(*flagHashPass, *flagHashRounds)
+		if err != nil {
+			logger.Fatal("HASHING :: %s", err.Error())
+		}
+		d := time.Since(start)
+		fmt.Printf(
+			"Generated Hash with %d rounds:\n\n%s\n\nTook %s for generating hash.\n",
+			*flagHashRounds, s, d.String())
+		os.Exit(1)
+	}
 
 	////////////
 	// LOGGER //

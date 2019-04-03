@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/gorilla/securecookie"
+	"github.com/zekroTJA/slms/internal/util"
 
 	"github.com/ghodss/yaml"
 	"github.com/zekroTJA/slms/internal/database/mysql"
@@ -26,7 +26,7 @@ var defConf = &Main{
 		Address:           ":443",
 		OnlyHTTPSRootLink: true,
 		APITokenHash:      "",
-		SessionStoreKey:   string(securecookie.GenerateRandomKey(64)),
+		SessionStoreKey:   util.GetRandString(64),
 		TLS: &webserver.ConfigTLS{
 			Use:      true,
 			CertFile: "/var/cert/example.com.cer",

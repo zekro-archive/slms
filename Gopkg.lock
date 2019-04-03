@@ -123,7 +123,6 @@
     "github.com/ghodss/yaml",
     "github.com/go-gem/sessions",
     "github.com/go-sql-driver/mysql",
-    "github.com/gorilla/securecookie",
     "github.com/op/go-logging",
     "github.com/qiangxue/fasthttp-routing",
     "github.com/valyala/fasthttp",
