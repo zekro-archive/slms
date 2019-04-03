@@ -19,7 +19,7 @@
     </center>
 
     <script>
-        $('#flogin').submit(function(e) {
+        $('#flogin').submit((e) => {
             e.preventDefault();
             var token = $('#tbtoken').val();
             if (token.length < 1) {
@@ -31,10 +31,10 @@
                 url: '/api/login',
                 dataType: 'json',
                 accepts: 'application/json',
-                beforeSend: function(r) {
+                beforeSend: (r) => {
                     r.setRequestHeader('Authorization', 'Basic ' + token);
                 },
-                complete: function(res) {
+                complete: (res) => {
                     if (res.status != 200) {
                         window.alert(`Authentication failed:\n${res.status} - ${res.statusText}`);
                         return;

@@ -31,6 +31,19 @@ td {
     padding: 5px;
 }
 
+#hidden-clipboard-area {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    border: none;
+    outline: none;
+    box-shadow: none;
+    background: transparent;
+}
+
 .textbox {
     width: 300px; 
     height: 20px;
@@ -47,7 +60,7 @@ td {
 
 .button {
     height: 25px;
-    width: 70px;
+    /* width: 70px; */
     background-color: transparent;
     color: white;
     outline: none;

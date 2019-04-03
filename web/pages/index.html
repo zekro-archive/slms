@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Shortlink Management</title>
+    <title>SLMS - Managing</title>
     <link rel="stylesheet" type="text/css" media="screen" href="/manage/static/css/style.css" />
     <script src="/manage/static/lib/jquery.min.js" type="application/javascript"></script>
 </head>
@@ -46,7 +46,7 @@
                 url: `/api/shortlinks?from=${site * perSite}&limit=${perSite}`,
                 dataType: 'json',
                 accepts: 'application/json',
-                complete: function(res) {
+                complete: (res) => {
                     links = res.responseJSON.results;
                     fillTable(res.responseJSON.results);
                 },
@@ -56,26 +56,16 @@
 
         function fillTable(_links) {
             var linktable = $('#linktable')[0];
-            linktable.innerHTML = '';
+            [].filter.call(linktable.children, (n) => n.tagName == "TR")
+                .forEach((n) => n.innerHTML = '');
 
             function setClipboardText(text){
-                var id = 'mycustom-clipboard-textarea-hidden-id';
+                var id = 'hidden-clipboard-area';
                 var existsTextarea = document.getElementById(id);
 
                 if (!existsTextarea){
                     var textarea = document.createElement('textarea');
                     textarea.id = id;
-                    textarea.style.position = 'fixed';
-                    textarea.style.top = 0;
-                    textarea.style.left = 0;
-                    textarea.style.width = '1px';
-                    textarea.style.height = '1px';
-                    textarea.style.padding = 0;
-                    textarea.style.border = 'none';
-                    textarea.style.outline = 'none';
-                    textarea.style.boxShadow = 'none';
-                
-                    textarea.style.background = 'transparent';
                     document.querySelector('body').appendChild(textarea);
                     existsTextarea = document.getElementById(id);
                 }
@@ -95,7 +85,7 @@
                 }
             }
 
-            _links.forEach(l => {
+            _links.forEach((l) => {
                 var row = document.createElement('tr');
 
                 var frootlink = document.createElement('td');
@@ -125,11 +115,11 @@
                 var btremove = document.createElement('button');
                 btremove.className = 'button';
                 btremove.innerText = 'REMOVE';
-                btremove.onclick = function() {
+                btremove.onclick = () => {
                     $.ajax({
                         method: 'DELETE',
                         url: `/api/shortlinks/${l.id}`,
-                        complete: function(res) {
+                        complete: (res) => {
                             console.log(res);
                             if (res.status != 200) {
                                 window.alert(`Deletion failed:\nCode: ${res.responseJSON.code}\nMessage: ${res.responseJSON.message}`)
@@ -151,7 +141,7 @@
         
         // --------------------
 
-        $('#fcreateedit').submit(function(e) {
+        $('#fcreateedit').submit((e) => {
             e.preventDefault();
 
             var long = $('#tblong').val();
@@ -167,9 +157,12 @@
             });
 
             var url = '/api/shortlinks';
+            var _msg = 'created';
 
-            if (eLink)
+            if (eLink) {
                 url += '/' + eLink.id;
+                _msg = 'updated';
+            }
 
             $.ajax({
                 method: 'POST',
@@ -179,13 +172,14 @@
                     'root_link': long,
                     'short_link': short,
                 }),
-                complete: function(res) {
+                complete: (res) => {
                     if (res.status != 200) {
                         window.alert(`Deletion failed:\nCode: ${res.responseJSON.code}\nMessage: ${res.responseJSON.message}`)
                         return;
                     }
 
                     loadEntries();
+                    window.alert(`Short link successfully ${_msg}.`);
                 },
             });
         })
