@@ -24,10 +24,11 @@ type WebServer struct {
 // Config contains the configuration
 // values for the WebServer.
 type Config struct {
-	Address         string     `json:"address"`
-	APITokenHash    string     `json:"api_token_hash"`
-	SessionStoreKey string     `json:"session_store_key"`
-	TLS             *ConfigTLS `json:"tls"`
+	Address           string     `json:"address"`
+	OnlyHTTPSRootLink bool       `json:"only_https_rootlink"`
+	APITokenHash      string     `json:"api_token_hash"`
+	SessionStoreKey   string     `json:"session_store_key"`
+	TLS               *ConfigTLS `json:"tls"`
 }
 
 // ConfigTLS contains the configuration
@@ -59,7 +60,7 @@ func NewWebServer(conf *Config, db database.Middleware, authProvider auth.Provid
 		config:   conf,
 		router:   router,
 		server: &fasthttp.Server{
-			Handler: router.HandleRequest,
+			Handler: sessions.ClearHandler(router.HandleRequest),
 		},
 	}
 

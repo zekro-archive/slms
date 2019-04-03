@@ -5,6 +5,7 @@ database:
   username: slms
 web_server:
   address: :443
+  only_https_rootlink: true
   api_token_hash: ""
   session_store_key: QCDI6gcqJlTX6ThQnC7JhnZkYhQSjSA6EN8TaqHa2ghRUQmIjLtkErt0xSnFz143
   tls:

@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/zekroTJA/slms/internal/util"
+	"github.com/gorilla/securecookie"
 
 	"github.com/ghodss/yaml"
 	"github.com/zekroTJA/slms/internal/database/mysql"
@@ -23,9 +23,10 @@ var (
 // Default config for new config files.
 var defConf = &Main{
 	WebServer: &webserver.Config{
-		Address:         ":443",
-		APITokenHash:    "",
-		SessionStoreKey: util.GetRandString(64),
+		Address:           ":443",
+		OnlyHTTPSRootLink: true,
+		APITokenHash:      "",
+		SessionStoreKey:   string(securecookie.GenerateRandomKey(64)),
 		TLS: &webserver.ConfigTLS{
 			Use:      true,
 			CertFile: "/var/cert/example.com.cer",

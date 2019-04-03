@@ -265,6 +265,10 @@ func (ws *WebServer) handlerCreateShortLink(ctx *routing.Context) error {
 		newSl.ShortLink = util.GetRandString(static.RandShortLen)
 	}
 
+	if err = util.CheckIfValidLink(newSl.RootLink, ws.config.OnlyHTTPSRootLink); err != nil {
+		return jsonError(ctx, err, statusBadRequest)
+	}
+
 	exSl, err := ws.db.GetShortLink("", "", newSl.ShortLink)
 	if err != nil {
 		return jsonError(ctx, err, statusInternalServerError)
@@ -296,6 +300,10 @@ func (ws *WebServer) handlerEditShortLink(ctx *routing.Context) error {
 	slUpdated := new(shortlink.ShortLink)
 	if err := parseJSONBody(ctx, slUpdated); err != nil {
 		return err
+	}
+
+	if err := util.CheckIfValidLink(slUpdated.RootLink, ws.config.OnlyHTTPSRootLink); err != nil {
+		return jsonError(ctx, err, statusBadRequest)
 	}
 
 	sl, ok := ws.getShortLink(ctx, false)
