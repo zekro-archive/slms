@@ -3,6 +3,7 @@ APPNAME  = slms
 PACKAGE  = github.com/zekroTJA/$(APPNAME)
 LDPAKAGE = static
 CONFIG   = $(CURDIR)/config/private.config.yml
+BINPATH  = $(CURDIR)/bin
 ###############################################
 
 ### EXECUTABLES ###############################
@@ -14,7 +15,7 @@ GREP   = grep
 
 # ---------------------------------------------
 
-BIN = $(CURDIR)/bin/$(APPNAME)
+BIN = $(BINPATH)/$(APPNAME)
 
 TAG        = $(shell git describe --tags)
 COMMIT     = $(shell git rev-parse HEAD)
@@ -33,12 +34,21 @@ ifneq ($(TAG),)
 endif
 
 ifeq ($(OS),Windows_NT)
+	ifeq ($(GOOS),)
+		BIN := $(BIN).exe
+	endif
+endif
+
+ifeq ($(GOOS),windows)
 	BIN := $(BIN).exe
 endif
 
 
 PHONY = _make
-_make: deps $(BIN) cleanup
+_make: deps build cleanup
+
+PHONY += build
+build: $(BIN) 
 
 PHONY += deps
 deps:
