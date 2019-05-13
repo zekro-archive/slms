@@ -1,6 +1,6 @@
-<!--------------->
-<!-- TEMPLATES -->
-<!--------------->
+<!-- ----------- -->
+<!--  TEMPLATES  -->
+<!-- ----------- -->
 <template>
   <div id="app">
     <!-- ERROR ALERT -->
@@ -150,9 +150,9 @@
   </div>
 </template>
 
-<!------------>
-<!-- SCRIPT -->
-<!------------>
+<!-- -------- -->
+<!--  SCRIPT  -->
+<!-- -------- -->
 <script>
 import Entry from './components/Entry.vue'
 import rest from './js/rest';
@@ -301,9 +301,9 @@ export default {
 }
 </script>
 
-<!----------->
-<!-- STYLE -->
-<!----------->
+<!-- ------- -->
+<!--  STYLE  -->
+<!-- ------- -->
 <style>
 
 #app {
