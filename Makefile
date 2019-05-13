@@ -11,6 +11,7 @@ GO     = go
 DEP    = dep
 GOLINT = golint
 GREP   = grep
+NPM    = npm
 ###############################################
 
 # ---------------------------------------------
@@ -45,7 +46,7 @@ endif
 
 
 PHONY = _make
-_make: deps build cleanup
+_make: deps build fe cleanup
 
 PHONY += build
 build: $(BIN) 
@@ -53,6 +54,8 @@ build: $(BIN)
 PHONY += deps
 deps:
 	$(DEP) ensure -v
+	cd ./web && \
+		$(NPM) install
 
 $(BIN):
 	$(GO) build  \
@@ -77,6 +80,11 @@ run:
 
 PHONY += cleanup
 cleanup:
+
+PHONY += fe
+fe:
+	cd ./web && \
+		$(NPM) run build
 
 PHONY += help
 help:

@@ -17,7 +17,10 @@ bin/*
 
 .DS_Store
 node_modules
-dist/*
+dist
+
+Gopkg.lock
+package-lock.json
 
 # local env files
 .env.local
