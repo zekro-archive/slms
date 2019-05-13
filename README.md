@@ -18,10 +18,19 @@ SLMS is a simple server solution which provides managable short links for your d
 
 # Screenshots
 
+> *State: Commit [`5f7139a`](https://github.com/zekroTJA/slms/commit/5f7139a38c2b737e906e33304aa8e935ba94297a)*
+
 ### Management Page
 
-![](https://i.zekro.de/chrome_2018-10-12_11-16-59.png)
-*State: Commit `d774cf3ed11e8d8c51c949e5f4b69bae2ad03f03`*
+![](https://i.zekro.de/Code_-_Insiders_WwKjWCP6Cm.png)
+
+### Add Short Links
+
+![](https://i.zekro.de/firefox_yd6F9si7ro.png)
+
+## Edit Short Links 
+
+![](https://i.zekro.de/firefox_dWZdEiXMNy.png)
 
 ---
 
