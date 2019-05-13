@@ -204,6 +204,7 @@ export default {
   methods: {
     refetchData() {
       rest.getShortlinks().then(res => {
+        this.addButtonVisible = true;
         this.shortlinks = res.data.results;
       }).catch((err) => {
         if (err.response && err.response.status == 401) {
