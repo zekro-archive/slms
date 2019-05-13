@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/qiangxue/fasthttp-routing"
 	"github.com/valyala/fasthttp"
@@ -27,8 +26,13 @@ var (
 
 // Static File Handlers
 var (
-	fileHandlerPages  = fasthttp.FSHandler("./web/pages", 1)
-	fileHandlerStatic = fasthttp.FSHandler("./web/static", 2)
+	fileHandlerStatic = fasthttp.FS{
+		Root:       "./web/dist",
+		IndexNames: []string{"index.html"},
+		PathRewrite: func(ctx *fasthttp.RequestCtx) []byte {
+			return ctx.Path()[7:]
+		},
+	}
 )
 
 var allowedRx = regexp.MustCompile(`[\w_\-]+`)
@@ -81,7 +85,10 @@ func jsonResponse(ctx *routing.Context, v interface{}, status int) error {
 func parseJSONBody(ctx *routing.Context, v interface{}) error {
 	data := ctx.PostBody()
 	err := json.Unmarshal(data, v)
-	return jsonError(ctx, err, fasthttp.StatusBadRequest)
+	if err != nil {
+		jsonError(ctx, err, fasthttp.StatusBadRequest)
+	}
+	return err
 }
 
 // getShortLink tries to get the ID or short from the path
@@ -159,6 +166,14 @@ func (ws *WebServer) checkRequestAuth(ctx *routing.Context) bool {
 func (ws *WebServer) handlerHeaderServer(ctx *routing.Context) error {
 	ctx.Response.Header.SetServer(
 		fmt.Sprintf("slms v.%s (%s)", static.AppVersion, static.AppCommit))
+
+	if static.Release != "TRUE" {
+		ctx.Response.Header.Set("Access-Control-Allow-Origin", "http://localhost:8081")
+		ctx.Response.Header.Set("Access-Control-Allow-Headers", "authorization, content-type")
+		ctx.Response.Header.Set("Access-Control-Allow-Methods", "POST, GET, DELETE")
+		ctx.Response.Header.Set("Access-Control-Allow-Credentials", "true")
+	}
+
 	return nil
 }
 
@@ -168,24 +183,10 @@ func (ws *WebServer) handlerHeaderServer(ctx *routing.Context) error {
 // If no valid authentication was provided, an attempt to access
 // static page files will always serve the login.html page.
 func (ws *WebServer) handlerFileServer(ctx *routing.Context) error {
-	path := string(ctx.URI().Path())
-
-	if strings.HasPrefix(path, "/manage/static") {
+	if string(ctx.Path()[:7]) == "/manage" {
+		fileHandlerStatic.NewRequestHandler()(ctx.RequestCtx)
 		ctx.Abort()
-		fileHandlerStatic(ctx.RequestCtx)
-		return nil
 	}
-
-	if strings.HasPrefix(path, "/manage") {
-		ctx.Abort()
-		if !ws.checkRequestAuth(ctx) {
-			ctx.SendFile("./web/pages/login.html")
-			return nil
-		}
-		fileHandlerPages(ctx.RequestCtx)
-		return nil
-	}
-
 	return nil
 }
 
@@ -255,7 +256,11 @@ func (ws *WebServer) handlerLogin(ctx *routing.Context) error {
 	if err != nil {
 		return jsonError(ctx, err, fasthttp.StatusInternalServerError)
 	}
-	return jsonError(ctx, s.Save(ctx.RequestCtx), fasthttp.StatusInternalServerError)
+	err = s.Save(ctx.RequestCtx)
+	if err != nil {
+		return jsonError(ctx, err, fasthttp.StatusInternalServerError)
+	}
+	return jsonResponse(ctx, struct{}{}, fasthttp.StatusOK)
 }
 
 // GET /api/shortlinks
@@ -349,8 +354,9 @@ func (ws *WebServer) handlerGetShortLink(ctx *routing.Context) error {
 // POST /api/shortlinks/:ID
 func (ws *WebServer) handlerEditShortLink(ctx *routing.Context) error {
 	slUpdated := new(shortlink.ShortLink)
-	if err := parseJSONBody(ctx, slUpdated); err != nil {
-		return err
+	err := parseJSONBody(ctx, slUpdated)
+	if err != nil {
+		return jsonError(ctx, err, fasthttp.StatusBadRequest)
 	}
 
 	sl, ok := ws.getShortLink(ctx, false)
