@@ -37,7 +37,7 @@ var (
 
 var allowedRx = regexp.MustCompile(`[\w_\-]+`)
 
-const reservedWords = "manage"
+const reservedWords = "manage count"
 
 // --- HELPER FUNCTIONS AND HANDLERS -------------------------------------
 
@@ -263,42 +263,61 @@ func (ws *WebServer) handlerLogin(ctx *routing.Context) error {
 	return jsonResponse(ctx, struct{}{}, fasthttp.StatusOK)
 }
 
+// GET /api/shortlinks/count
+func (ws *WebServer) handlerGetShortLinkCount(ctx *routing.Context) error {
+	i, err := ws.db.GetShortLinkCount()
+	if err != nil {
+		return jsonError(ctx, err, fasthttp.StatusInternalServerError)
+	}
+	return jsonResponse(ctx, map[string]int{"count": i}, fasthttp.StatusOK)
+}
+
 // GET /api/shortlinks
 func (ws *WebServer) handlerGetShortLinks(ctx *routing.Context) error {
 	var err error
-	limit, from := 50, 0
+	page, size := 0, 100
 
 	query := ctx.QueryArgs()
 
-	if query.Has("from") {
-		from, err = strconv.Atoi(string(query.Peek("from")))
+	if query.Has("page") {
+		page, err = strconv.Atoi(string(query.Peek("page")))
 		if err != nil {
 			return jsonError(ctx, err, fasthttp.StatusBadRequest)
 		}
-		if from < 0 {
-			return jsonError(ctx, errors.New("from must be at leats 0"), fasthttp.StatusBadRequest)
+		if page < 0 {
+			return jsonError(ctx, errors.New("page must be at leats 0"), fasthttp.StatusBadRequest)
 		}
 	}
 
-	if query.Has("limit") {
-		limit, err = strconv.Atoi(string(query.Peek("limit")))
+	if query.Has("size") {
+		size, err = strconv.Atoi(string(query.Peek("size")))
 		if err != nil {
 			return jsonError(ctx, err, fasthttp.StatusBadRequest)
 		}
-		if limit < 1 || limit > 1000 {
-			return jsonError(ctx, errors.New("limit must be in range (0, 1000]"), fasthttp.StatusBadRequest)
+		if size < 1 || size > 1000 {
+			return jsonError(ctx, errors.New("size must be in range (0, 1000]"), fasthttp.StatusBadRequest)
 		}
 	}
 
-	sls, err := ws.db.GetShortLinks(from, limit)
+	sls, err := ws.db.GetShortLinks(page*size, size)
 	if err != nil {
 		return jsonError(ctx, err, fasthttp.StatusInternalServerError)
 	}
 
-	return jsonResponse(ctx, map[string]interface{}{
+	res := map[string]interface{}{
 		"n":       len(sls),
 		"results": sls,
-	}, fasthttp.StatusOK)
+	}
+
+	if query.Has("total_entries") {
+		i, err := ws.db.GetShortLinkCount()
+		if err != nil {
+			return jsonError(ctx, err, fasthttp.StatusInternalServerError)
+		}
+		res["total_entries"] = i
+	}
+
+	return jsonResponse(ctx, res, fasthttp.StatusOK)
 }
 
 // POST /api/shortlinks
