@@ -78,13 +78,20 @@ run:
 	$(GO) run -v \
 		$(CURDIR)/cmd/$(APPNAME) -c $(CONFIG) -l 5
 
+PHONY += runfe
+runfe:
+	cd $(CURDIR)/web && \
+		$(NPM) run serve
+
 PHONY += cleanup
 cleanup:
 
 PHONY += fe
 fe:
-	cd ./web && \
+	cd $(CURDIR)/web && \
 		$(NPM) run build
+	mkdir -p $(CURDIR)/bin/web
+	cp -r $(CURDIR)/web/dist  $(CURDIR)/bin/web/dist
 
 PHONY += help
 help:

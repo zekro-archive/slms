@@ -223,7 +223,7 @@ func (ws *WebServer) handlerShort(ctx *routing.Context) error {
 
 	if sl == nil {
 		ctx.SetStatusCode(fasthttp.StatusNotFound)
-		ctx.SendFile("./web/pages/invalid.html")
+		ctx.SendFile("./web/dist/invalid.html")
 		ctx.Abort()
 		return nil
 	}
