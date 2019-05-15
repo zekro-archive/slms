@@ -87,9 +87,13 @@ func (ws *WebServer) registerHandlers() {
 		ws.limitManager.GetHandler(10*time.Second, 3),
 		ws.handlerLogin)
 
+	// GET /api/shortlinks/count
+	api.Get("/shortlinks/count",
+		ws.limitManager.GetHandler(1*time.Second, 10),
+		ws.handlerGetShortLinkCount)
 	// GET /api/shortlinks
 	shortLinks := api.Get("/shortlinks",
-		ws.limitManager.GetHandler(2*time.Second, 5),
+		ws.limitManager.GetHandler(1*time.Second, 10),
 		ws.handlerGetShortLinks)
 	// POST /api/shortlinks
 	shortLinks.Post(

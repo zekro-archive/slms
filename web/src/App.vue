@@ -8,6 +8,13 @@
       {{ alert.msg }}
     </b-alert>
 
+    <!-- HEADER -->
+    <b-container class="header d-flex text-white" vertical-align="center" fluid v-if="loggedIn">
+      <b-button size="sm" variant="primary" @click="page(-1)">◄</b-button>
+      <p class="my-auto mx-3">Site {{ header.currSite + 1 }} / {{ header.allSites }}</p>
+      <b-button size="sm" variant="primary" @click="page(1)">►</b-button>
+    </b-container>
+
     <!-- ENTRY LIST -->
     <Entry v-for="sl in shortlinks" 
       :key="sl.id"
@@ -20,7 +27,7 @@
     />
 
     <!-- ADD BUTTON -->
-    <a v-b-modal.modal-add v-if="addButtonVisible" class="add text-white">+</a>
+    <a v-b-modal.modal-add v-if="loggedIn" class="add text-white">+</a>
 
     <!-- LOGIN MODAL -->
     <b-modal 
@@ -159,6 +166,8 @@ import rest from './js/rest';
 import utils from './js/utils';
 import { EventBus } from './js/eventbus';
 
+const PAGESIZE = 10;
+
 export default {
   name: 'app',
   components: {
@@ -197,15 +206,23 @@ export default {
         showWrongCredentials: false,
       },
 
-      addButtonVisible: false,
+      header: {
+        currSite: 0,
+        allSites: 1,
+      },
+
+      loggedIn: false,
     };
   },
 
   methods: {
     refetchData() {
-      rest.getShortlinks().then(res => {
-        this.addButtonVisible = true;
+      rest.getShortlinks(this.header.currSite, PAGESIZE).then((res) => {
+        this.loggedIn = true;
         this.shortlinks = res.data.results;
+        if (res.data.total_entries > PAGESIZE) {
+          this.header.allSites = Math.floor(res.data.total_entries / PAGESIZE) + 1;
+        }
       }).catch((err) => {
         if (err.response && err.response.status == 401) {
           this.$bvModal.show('modal-login');
@@ -234,8 +251,16 @@ export default {
       }
     },
 
-    test(e) {
-      console.log(e);
+    page(site) {
+      var newSite = this.header.currSite + site;
+      var diff = this.header.allSites - newSite;
+      if (newSite < 0) {
+        newSite = this.header.allSites + newSite;
+      } else if (diff <= 0) {
+        newSite = Math.abs(diff);
+      }
+      this.header.currSite = newSite;
+      this.refetchData();
     },
 
     createShortLink(root, short) {
@@ -314,7 +339,7 @@ export default {
 body {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   background-color: #263238;
-  padding: 20px;
+  padding: 70px 20px;
 }
 
 a.add {
@@ -355,6 +380,17 @@ table.mod-delete th {
     outline: none;
     box-shadow: none;
     background: transparent;
+}
+
+.header {
+  position: fixed;
+  align-items: center;
+  background-color: rgb(31, 40, 44);
+  top: 0px;
+  left: 0px;
+  right: 0px;
+  z-index: 2;
+  padding: 10px 20px;
 }
 
 </style>
