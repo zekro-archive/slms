@@ -1,6 +1,6 @@
 package static
 
-const (
+var (
 	// AppVersion describes the version of the build
 	AppVersion = "UNSET"
 	// AppCommit describes the commit of the build

@@ -33,8 +33,9 @@ func main() {
 	if *flagVersion {
 		fmt.Printf("SLMS v.%s\nCommit: %s\n"+
 			"(c) 2019 Ringo Hoffmann (zekro Development)\n"+
-			"Covered by MIT Licence.\n",
-			static.AppVersion, static.AppCommit)
+			"Covered by MIT Licence.\n"+
+			"Production Build: %s\n",
+			static.AppVersion, static.AppCommit, static.Release)
 		os.Exit(0)
 	}
 

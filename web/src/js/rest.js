@@ -2,8 +2,9 @@
 
 import axios from 'axios';
 
-const ROOTURI = '';
-// const ROOTURI = "http://localhost:8080";
+// const ROOTURI = '';
+const ROOTURI =
+  process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8080';
 const HEADERS = {
   // Authorization: "Basic test"
 };

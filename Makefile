@@ -1,7 +1,7 @@
 ### NAMES AND LOCS ############################
 APPNAME  = slms
 PACKAGE  = github.com/zekroTJA/$(APPNAME)
-LDPAKAGE = static
+LDPAKAGE = internal/static
 CONFIG   = $(CURDIR)/config/private.config.yml
 BINPATH  = $(CURDIR)/bin
 ###############################################
@@ -76,7 +76,7 @@ lint:
 PHONY += run
 run:
 	$(GO) run -v \
-		$(CURDIR)/cmd/$(APPNAME) -c $(CONFIG) -l 5
+		$(CURDIR)/cmd/$(APPNAME) -c $(CONFIG) -l 5 -v
 
 PHONY += cleanup
 cleanup:
@@ -85,6 +85,11 @@ PHONY += fe
 fe:
 	cd ./web && \
 		$(NPM) run build
+
+PHONY += runfe
+runfe:
+	cd ./web && \
+		$(NPM) run serve
 
 PHONY += help
 help:
