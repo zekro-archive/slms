@@ -12,10 +12,13 @@ const HEADERS = {
 axios.defaults.withCredentials = true;
 
 export default {
-  getShortlinks() {
+  getShortlinks(page, size) {
+    var url = '/api/shortlinks?total_entries';
+    if (page > -1) url += '&page=' + page;
+    if (size > 0) url += '&size=' + size;
     return axios({
       method: 'GET',
-      url: ROOTURI + '/api/shortlinks',
+      url: ROOTURI + url,
       headers: HEADERS,
     });
   },

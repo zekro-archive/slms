@@ -23,6 +23,7 @@ type MySQL struct {
 }
 
 type prepStmts struct {
+	getSLCount   *sql.Stmt
 	getSLByID    *sql.Stmt
 	getSLs       *sql.Stmt
 	getSLByRoot  *sql.Stmt
@@ -73,6 +74,10 @@ func (m *MySQL) prepStatements() error {
 
 	m.stmts = new(prepStmts)
 
+	m.stmts.getSLCount, err = m.db.Prepare(
+		"SELECT COUNT(`id`) FROM `shortlinks` WHERE `deleted` = 0;")
+	mErr.Append(err)
+
 	m.stmts.getSLByID, err = m.db.Prepare(
 		"SELECT `id`, `rootlink`, `shortlink`, `created`, `accesses`, `edited` FROM `shortlinks` " +
 			"WHERE `deleted` = 0 AND `id` = ?;")
@@ -110,6 +115,14 @@ func (m *MySQL) prepStatements() error {
 	mErr.Append(err)
 
 	return mErr.Concat()
+}
+
+// GetShortLinkCount returns the number of short
+// link entries in the database.
+func (m *MySQL) GetShortLinkCount() (int, error) {
+	var i int
+	err := m.stmts.getSLCount.QueryRow().Scan(&i)
+	return i, err
 }
 
 // GetShortLink gets a short link object from database by

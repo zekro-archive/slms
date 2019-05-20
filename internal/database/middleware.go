@@ -33,6 +33,9 @@ type Middleware interface {
 	// connection.
 	Close()
 
+	// GetShortLinkCount returns the number of short
+	// link entries in the database.
+	GetShortLinkCount() (int, error)
 	// GetShortLink gets a shortlink entry from
 	// database wether by id, root or short link
 	// (excatly in this order).
