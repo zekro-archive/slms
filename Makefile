@@ -76,7 +76,7 @@ lint:
 PHONY += run
 run:
 	$(GO) run -v \
-		$(CURDIR)/cmd/$(APPNAME) -c $(CONFIG) -l 5 -v
+		$(CURDIR)/cmd/$(APPNAME) -c $(CONFIG) -l 5
 
 PHONY += runfe
 runfe:
