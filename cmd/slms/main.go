@@ -20,6 +20,7 @@ import (
 var (
 	flagConfig     = flag.String("c", "./config.yml", "config file location")
 	flagLogLvl     = flag.Int("l", 4, "log level (see https://github.com/op/go-logging/blob/master/level.go#L20)")
+	flagAddr       = flag.String("addr", "", "port to expose web server on (overrides config)")
 	flagVersion    = flag.Bool("v", false, "display SLMS version")
 	flagHashPass   = flag.String("hash", "", "create a bcrypt hash of a password for config file")
 	flagHashRounds = flag.Int("rounds", 12, "bcrypt rounds for hashing password. "+
@@ -72,6 +73,10 @@ func main() {
 	}
 	logger.Info("CONFIG :: initialized")
 	logger.Debug("CONFIG :: %+v", cfg)
+
+	if *flagAddr != "" {
+		cfg.WebServer.Address = *flagAddr
+	}
 
 	//////////////
 	// DATABASE //
