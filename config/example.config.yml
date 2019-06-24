@@ -5,9 +5,11 @@ database:
   username: slms
 web_server:
   address: :443
-  only_https_rootlink: true
   api_token_hash: ""
-  session_store_key: QCDI6gcqJlTX6ThQnC7JhnZkYhQSjSA6EN8TaqHa2ghRUQmIjLtkErt0xSnFz143
+  only_https_rootlink: true
+  permanent_redirect: true
+  root_redirect: /manage
+  session_store_key: fwnWDyyo3wzjE2vJ4HodseJAps8HVstoug0Tgqs1EsrvYbVgyE3bwnEhNSOzMcxL
   tls:
     cert_file: /var/cert/example.com.cer
     key_file: /var/cert/example.com.key

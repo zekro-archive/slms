@@ -204,6 +204,13 @@ func (ws *WebServer) handlerAuth(ctx *routing.Context) error {
 // requests.
 func (ws *WebServer) handlerShort(ctx *routing.Context) error {
 	short := ctx.Param("short")
+	if short == "" {
+		ctx.SetStatusCode(ws.redirectStatus)
+		ctx.Response.Header.Set("Location", ws.config.RootRedirect)
+		ctx.Abort()
+		return nil
+	}
+
 	ctx.Response.Header.SetContentType("text/html")
 
 	sl, err := ws.db.GetShortLink("", "", short)
@@ -228,7 +235,7 @@ func (ws *WebServer) handlerShort(ctx *routing.Context) error {
 		return nil
 	}
 
-	ctx.SetStatusCode(fasthttp.StatusMovedPermanently)
+	ctx.SetStatusCode(ws.redirectStatus)
 	ctx.Response.Header.Set("Location", sl.RootLink)
 	ctx.SetBodyString(
 		"<html>" +

@@ -24,6 +24,8 @@ var (
 var defConf = &Main{
 	WebServer: &webserver.Config{
 		Address:           ":443",
+		RootRedirect:      "/manage",
+		PermanentRedirect: true,
 		OnlyHTTPSRootLink: true,
 		APITokenHash:      "",
 		SessionStoreKey:   util.GetRandString(64),

@@ -14,20 +14,23 @@ import (
 // A WebServer handles the REST API
 // connections.
 type WebServer struct {
-	db           database.Middleware
-	auth         auth.Provider
-	sessions     sessions.Store
-	config       *Config
-	server       *fasthttp.Server
-	router       *routing.Router
-	limitManager *RateLimitManager
+	db             database.Middleware
+	auth           auth.Provider
+	sessions       sessions.Store
+	config         *Config
+	server         *fasthttp.Server
+	router         *routing.Router
+	limitManager   *RateLimitManager
+	redirectStatus int
 }
 
 // Config contains the configuration
 // values for the WebServer.
 type Config struct {
 	Address           string     `json:"address"`
+	RootRedirect      string     `json:"root_redirect"`
 	OnlyHTTPSRootLink bool       `json:"only_https_rootlink"`
+	PermanentRedirect bool       `json:"permanent_redirect"`
 	APITokenHash      string     `json:"api_token_hash"`
 	SessionStoreKey   string     `json:"session_store_key"`
 	TLS               *ConfigTLS `json:"tls"`
@@ -65,6 +68,12 @@ func NewWebServer(conf *Config, db database.Middleware, authProvider auth.Provid
 		server: &fasthttp.Server{
 			Handler: sessions.ClearHandler(router.HandleRequest),
 		},
+	}
+
+	if ws.config.PermanentRedirect {
+		ws.redirectStatus = fasthttp.StatusPermanentRedirect
+	} else {
+		ws.redirectStatus = fasthttp.StatusTemporaryRedirect
 	}
 
 	ws.registerHandlers()

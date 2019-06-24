@@ -40,4 +40,15 @@ yarn-error.log*
 *.sln
 *.sw?
 
-vendor/*
+vendor
+bin
+config
+docs
+scripts
+dist
+*.md
+*.yml
+.jshintrc
+.gitignore
+Gopkg.lock
+Makefile
