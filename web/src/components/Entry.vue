@@ -1,32 +1,19 @@
 <template>
-  <b-container fluid class="entry mb-3 p-2 rounded text-white">
-    <b-row>
-      <b-col>
-        <h5 class="mb-0">{{ shortlink }}</h5>
-        <div>
-          <a :href="rootlink" target="_blank" class="root mt-1">{{ shorten(rootlink, 80) }}</a>
-        </div>
+  <div class="entry mb-3 p-2 rounded text-white d-flex w-100">
+    <div>
+      <h5 class="mb-0">{{ shortlink }}</h5>
+      <a :href="rootlink" target="_blank" class="root mt-1">{{ shorten(rootlink, 60) }}</a>
+      <div>
         <b-badge variant="secondary">#{{ id }}</b-badge>
         <b-badge variant="primary ml-2">{{ accesses }} Clicks</b-badge>
-      </b-col>
-      <b-col cols="2" class="text-right">
-        <b-button 
-          variant="warning" 
-          class="mr-2"
-          @click="copy"
-        >🔗</b-button>
-        <b-button 
-          variant="info" 
-          class="mr-2"
-          @click="edit"
-        >✏️</b-button>
-        <b-button 
-          variant="danger"
-          @click="del"
-        >🗑️</b-button>
-      </b-col>
-    </b-row>
-  </b-container>
+      </div>
+    </div>
+    <div class="ml-auto mr-0">
+      <b-button variant="warning" class="mr-2" @click="copy">🔗</b-button>
+      <b-button variant="info" class="mr-2" @click="edit">✏️</b-button>
+      <b-button variant="danger" @click="del">🗑️</b-button>
+    </div>
+  </div>
 </template>
 
 <script>
@@ -39,7 +26,7 @@ import utils from '../js/utils';
 
 export default {
   name: 'Entry',
-  
+
   props: {
     id: Number,
     rootlink: String,
@@ -75,8 +62,11 @@ export default {
     },
 
     copy() {
-      utils.copySLToClipboard(this.shortlink)
-        .then(() => EventBus.$emit('main-info', 'Short link copied to clip board.'))
+      utils
+        .copySLToClipboard(this.shortlink)
+        .then(() =>
+          EventBus.$emit('main-info', 'Short link copied to clip board.')
+        )
         .catch((err) => EventBus.$emit('main-error', err));
     },
   },
@@ -84,6 +74,25 @@ export default {
 </script>
 
 <style scoped>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 .entry {
   background-color: #37474F;
 }

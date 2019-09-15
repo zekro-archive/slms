@@ -4,9 +4,7 @@
 <template>
   <div id="app">
     <!-- ERROR ALERT -->
-    <b-alert :show="alert.visible" :variant="alert.type">
-      {{ alert.msg }}
-    </b-alert>
+    <b-alert :show="alert.visible" :variant="alert.type">{{ alert.msg }}</b-alert>
 
     <!-- HEADER -->
     <b-container class="header d-flex text-white" vertical-align="center" fluid v-if="loggedIn">
@@ -16,7 +14,8 @@
     </b-container>
 
     <!-- ENTRY LIST -->
-    <Entry v-for="sl in shortlinks" 
+    <Entry
+      v-for="sl in shortlinks"
       :key="sl.id"
       :id="sl.id"
       :rootlink="sl.root_link"
@@ -30,25 +29,14 @@
     <a v-b-modal.modal-add v-if="loggedIn" class="add text-white">+</a>
 
     <!-- LOGIN MODAL -->
-    <b-modal 
-      id="modal-login" 
-      class="text-dark" 
-      title="Login"
-      @hide="login(loginModal.tbToken)"
-    >
-      <b-alert :show="loginModal.showWrongCredentials" variant="danger">
-        Wrong login credentials.
-      </b-alert>
-      <b-form-group
-        id="groupLoginToken"
-        label="Login token:"
-        label-for="tbLoginToken"
-      >
+    <b-modal id="modal-login" class="text-dark" title="Login" @hide="login(loginModal.tbToken)">
+      <b-alert :show="loginModal.showWrongCredentials" variant="danger">Wrong login credentials.</b-alert>
+      <b-form-group id="groupLoginToken" label="Login token:" label-for="tbLoginToken">
         <b-form-input
           id="tbShortLink"
           ref="tbShortLink"
           type="password"
-          placeholder=""
+          placeholder
           v-model="loginModal.tbToken"
           @keyup.enter.native="$bvModal.hide('modal-login')"
         ></b-form-input>
@@ -56,11 +44,11 @@
     </b-modal>
 
     <!-- ADD MODAL -->
-    <b-modal 
-      id="modal-add" 
-      class="text-dark" 
+    <b-modal
+      id="modal-add"
+      class="text-dark"
       title="Add Short Link"
-      @ok="createShortLink(addModal.tbRootLink, addModal.tbShortLink)"  
+      @ok="createShortLink(addModal.tbRootLink, addModal.tbShortLink)"
     >
       <b-form-group
         id="groupShortLink"
@@ -68,12 +56,7 @@
         label-for="tbShortLink"
         description="Leave empty for random short link identifier."
       >
-        <b-form-input
-          id="tbShortLink"
-          type="text"
-          placeholder=""
-          v-model="addModal.tbShortLink"
-        ></b-form-input>
+        <b-form-input id="tbShortLink" type="text" placeholder v-model="addModal.tbShortLink"></b-form-input>
       </b-form-group>
       <b-form-group
         id="groupRootLink"
@@ -85,18 +68,18 @@
           id="tbRootLink"
           type="text"
           required
-          placeholder=""
+          placeholder
           v-model="addModal.tbRootLink"
         ></b-form-input>
       </b-form-group>
     </b-modal>
 
     <!-- EDIT MODAL -->
-    <b-modal 
-      id="modal-edit" 
-      class="text-dark" 
+    <b-modal
+      id="modal-edit"
+      class="text-dark"
       title="Edit Short Link"
-      @ok="modifyShortLink(editModal.id, editModal.tbRootLink, editModal.tbShortLink)"  
+      @ok="modifyShortLink(editModal.id, editModal.tbRootLink, editModal.tbShortLink)"
     >
       <b-form-group
         id="groupShortLink"
@@ -104,12 +87,7 @@
         label-for="tbShortLink"
         description="The short link identifier."
       >
-        <b-form-input
-          id="tbShortLink"
-          type="text"
-          placeholder=""
-          v-model="editModal.tbShortLink"
-        ></b-form-input>
+        <b-form-input id="tbShortLink" type="text" placeholder v-model="editModal.tbShortLink"></b-form-input>
       </b-form-group>
       <b-form-group
         id="groupRootLink"
@@ -121,19 +99,14 @@
           id="tbRootLink"
           type="text"
           required
-          placeholder=""
+          placeholder
           v-model="editModal.tbRootLink"
         ></b-form-input>
       </b-form-group>
     </b-modal>
 
     <!-- DELETE MODAL -->
-    <b-modal 
-      id="modal-delete" 
-      hide-footer 
-      class="text-dark" 
-      title="Delete Short Link"
-    >
+    <b-modal id="modal-delete" hide-footer class="text-dark" title="Delete Short Link">
       <p>Do you really want to delete the following short link?</p>
       <table class="mod-delete">
         <tr>
@@ -150,7 +123,11 @@
         </tr>
       </table>
       <div class="text-right">
-        <b-button variant="secondary" class="mt-3 mr-2" @click="$bvModal.hide('modal-delete')">Cancel</b-button>
+        <b-button
+          variant="secondary"
+          class="mt-3 mr-2"
+          @click="$bvModal.hide('modal-delete')"
+        >Cancel</b-button>
         <b-button variant="danger" class="mt-3" @click="deleteShortLink(deleteModal.id)">Delete</b-button>
       </div>
     </b-modal>
@@ -161,6 +138,7 @@
 <!--  SCRIPT  -->
 <!-- -------- -->
 <script>
+
 import Entry from './components/Entry.vue'
 import rest from './js/rest';
 import utils from './js/utils';
@@ -331,6 +309,7 @@ export default {
 <!--  STYLE  -->
 <!-- ------- -->
 <style>
+
 
 #app {
   width: 100%;
