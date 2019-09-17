@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # OSES=(
-#     "linux" 
-#     "windows" 
-#     "darwin" 
+#     "linux"
+#     "windows"
+#     "darwin"
 #     "freebsd"
 # )
 
@@ -47,7 +47,9 @@ function build {
     mkdir ./release
 }
 
-cp -r ./web/* ./_release/web
+make fe
+
+mv ./web/dist ./_release/web
 
 make deps
 
