@@ -1,4 +1,11 @@
-<div align="center">
+# ⚠ Outdated
+
+This project is not supported anymore. Please visit the successor of this project:  
+https://github.com/vctr-sls
+
+---
+
+div align="center">
      <!-- <img src="https://zekro.de/src/go_chat_logo.png" width="400"/> -->
      <h1>~ SLMS ~</h1>
      <strong>Short link management system - create and manage custom shortlinks on your webserver</strong><br><br>
